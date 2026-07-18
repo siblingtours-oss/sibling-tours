@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="id" class="scroll-smooth">
-<head> <!-- Supabase JS Client CDN -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Sibling Tours | Premium Labuan Bajo Experiences & CMS</title>
+    <title>Sibling Tours | Premium Labuan Bajo Experiences & Cloud CMS</title>
     <meta name="description" content="Discover the beauty of Labuan Bajo and Komodo National Park with Sibling Tours. Premium, luxury tropical travel experiences.">
     <meta name="keywords" content="Labuan Bajo, Komodo, Tours, Travel, Indonesia, Premium Travel, Sibling Tours">
     <meta name="author" content="Sibling Tours">
@@ -24,6 +22,9 @@
     
     <!-- Icons (Phosphor Icons) -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Supabase JS Client Library CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -137,8 +138,23 @@
     <!-- Loader Screen -->
     <div id="loader"><div class="spinner"></div></div>
 
-    <!-- Custom Toast Notification Box (Menggantikan alert bawaan browser) -->
+    <!-- Custom Toast Notification Box -->
     <div id="toast-container" class="fixed top-24 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- Custom Confirmation Modal (Replacing window.confirm) -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl animate-zoom-in text-center border border-gray-100">
+            <div class="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-3xl">
+                <i class="ph ph-warning"></i>
+            </div>
+            <h3 id="confirm-title" class="text-xl font-bold text-dark mb-2">Konfirmasi Tindakan</h3>
+            <p id="confirm-message" class="text-sm text-gray-500 mb-6 leading-relaxed">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+            <div class="flex gap-3 justify-center">
+                <button id="confirm-btn-cancel" class="bg-gray-100 hover:bg-gray-200 text-dark px-5 py-3 rounded-xl text-xs font-bold transition w-full">Batal</button>
+                <button id="confirm-btn-ok" class="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-xl text-xs font-bold transition w-full">Lanjutkan</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Layout Wrapper -->
     <header id="header-container" class="fixed w-full top-0 z-50 transition-all duration-300 header-transparent"></header>
@@ -153,7 +169,7 @@
     </a>
 
     <script>
-        // Data Default (Sebelum diedit melalui dashboard CMS)
+        // Data Default (Sebelum diedit melalui dashboard CMS atau ditarik dari database cloud)
         const DEFAULT_SITE = {
             name: "Sibling Tours",
             tagline: "Premium Labuan Bajo Experiences",
@@ -258,6 +274,74 @@
             { name: "Dewi Lestari", role: "Customer Service & Booking Operations", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300" }
         ];
 
+        // KREDENSIAL SUPABASE (Masukkan API Keys Proyek Anda di Sini)
+        const SUPABASE_URL = "https://fbveofdacvnkvrxbvzds.supabase.co/rest/v1/"; 
+        const SUPABASE_KEY = "sb_publishable_tZ64j2LZm5olA-olkNLd-g_RKrc74ls"; 
+
+        // Menggunakan 'supabaseClient' untuk menghindari collision dengan global identifier library 'supabase'
+        let supabaseClient = null;
+        let useSupabase = false;
+
+        // Inisialisasi Klien Supabase jika Kredensial Valid
+        if (SUPABASE_URL && SUPABASE_KEY && !SUPABASE_URL.startsWith("ISI_DENGAN_")) {
+            try {
+                supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+                if (supabaseClient) {
+                    useSupabase = true;
+                    console.log("Database: Cloud Supabase berhasil tersambung.");
+                }
+            } catch (err) {
+                console.warn("Koneksi Supabase gagal, menggunakan LocalStorage fallback:", err);
+            }
+        } else {
+            console.log("Database: Supabase tidak diatur atau credentials kosong. Berjalan pada model LocalStorage offline.");
+        }
+
+        // Custom Promise-based Confirmation Dialog
+        window.showConfirm = (title, message, isDanger = true) => {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('confirm-modal');
+                const titleEl = document.getElementById('confirm-title');
+                const messageEl = document.getElementById('confirm-message');
+                const cancelBtn = document.getElementById('confirm-btn-cancel');
+                const okBtn = document.getElementById('confirm-btn-ok');
+                const iconContainer = modal.querySelector('.w-16');
+
+                titleEl.innerText = title;
+                messageEl.innerText = message;
+
+                if (isDanger) {
+                    iconContainer.className = "w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-3xl";
+                    okBtn.className = "bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-xl text-xs font-bold transition w-full";
+                } else {
+                    iconContainer.className = "w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 text-3xl";
+                    okBtn.className = "bg-primary hover:bg-primary/90 text-white px-5 py-3 rounded-xl text-xs font-bold transition w-full";
+                }
+
+                modal.classList.remove('hidden');
+
+                const handleCancel = () => {
+                    modal.classList.add('hidden');
+                    cleanup();
+                    resolve(false);
+                };
+
+                const handleOk = () => {
+                    modal.classList.add('hidden');
+                    cleanup();
+                    resolve(true);
+                };
+
+                const cleanup = () => {
+                    cancelBtn.removeEventListener('click', handleCancel);
+                    okBtn.removeEventListener('click', handleOk);
+                };
+
+                cancelBtn.addEventListener('click', handleCancel);
+                okBtn.addEventListener('click', handleOk);
+            });
+        };
+
         const AppState = {
             site: null,
             hero: null,
@@ -266,49 +350,113 @@
             testimonials: [],
             faq: [],
             team: [],
-            bookings: [], // Menyimpan pesanan masuk
+            bookings: [],
             isAdminAuthenticated: false,
 
-            init() {
-                // Memuat data dari LocalStorage atau fallback ke default constants (seperti database PHP)
-                this.site = JSON.parse(localStorage.getItem('ST_SITE')) || DEFAULT_SITE;
+            async init() {
+                this.isAdminAuthenticated = sessionStorage.getItem('ST_ADMIN_AUTH') === 'true';
+
+                if (useSupabase && supabaseClient) {
+                    try {
+                        // 1. Ambil Pengaturan Website
+                        const { data: siteData, error: siteErr } = await supabaseClient.from('site_settings').select('*').eq('id', 1).maybeSingle();
+                        if (siteData && !siteErr) {
+                            this.site = {
+                                name: siteData.logo || DEFAULT_SITE.name,
+                                tagline: siteData.tagline || DEFAULT_SITE.tagline,
+                                logo: siteData.logo || DEFAULT_SITE.logo,
+                                email: siteData.email || DEFAULT_SITE.email,
+                                phone: siteData.phone || DEFAULT_SITE.phone,
+                                whatsapp: siteData.whatsapp || DEFAULT_SITE.whatsapp,
+                                address: siteData.address || DEFAULT_SITE.address,
+                                socials: {
+                                    instagram: siteData.instagram || DEFAULT_SITE.socials.instagram,
+                                    facebook: siteData.facebook || DEFAULT_SITE.socials.facebook,
+                                    youtube: siteData.youtube || DEFAULT_SITE.socials.youtube
+                                },
+                                aboutSnippet: siteData.about_snippet || DEFAULT_SITE.aboutSnippet
+                            };
+                        } else {
+                            this.site = DEFAULT_SITE;
+                        }
+
+                        // 2. Ambil Paket Wisata (Tours)
+                        const { data: toursData, error: toursErr } = await supabaseClient.from('tours').select('*').order('created_at', { ascending: true });
+                        if (toursData && !toursErr) {
+                            this.tours = toursData;
+                        } else {
+                            this.tours = DEFAULT_TOURS;
+                        }
+
+                        // 3. Ambil FAQs
+                        const { data: faqData, error: faqErr } = await supabaseClient.from('faqs').select('*').order('id', { ascending: true });
+                        if (faqData && !faqErr) {
+                            this.faq = faqData;
+                        } else {
+                            this.faq = DEFAULT_FAQ;
+                        }
+
+                        // 4. Ambil Bookings (Orderan masuk)
+                        const { data: bookingData, error: bookErr } = await supabaseClient.from('bookings').select('*').order('created_at', { descending: true });
+                        if (bookingData && !bookErr) {
+                            this.bookings = bookingData;
+                        } else {
+                            this.bookings = [];
+                        }
+
+                    } catch (error) {
+                        console.error("Terjadi kegagalan penarikan data dari Supabase:", error);
+                        this.loadLocalFallback();
+                    }
+                } else {
+                    this.loadLocalFallback();
+                }
+
+                // Pengaturan Hero & Team Cadangan Tetap Statis/Lokal
                 this.hero = JSON.parse(localStorage.getItem('ST_HERO')) || DEFAULT_HERO;
-                this.tours = JSON.parse(localStorage.getItem('ST_TOURS')) || DEFAULT_TOURS;
                 this.gallery = JSON.parse(localStorage.getItem('ST_GALLERY')) || DEFAULT_GALLERY;
                 this.testimonials = JSON.parse(localStorage.getItem('ST_TESTIMONIALS')) || DEFAULT_TESTIMONIALS;
-                this.faq = JSON.parse(localStorage.getItem('ST_FAQ')) || DEFAULT_FAQ;
                 this.team = JSON.parse(localStorage.getItem('ST_TEAM')) || DEFAULT_TEAM;
+            },
+
+            loadLocalFallback() {
+                this.site = JSON.parse(localStorage.getItem('ST_SITE')) || DEFAULT_SITE;
+                this.tours = JSON.parse(localStorage.getItem('ST_TOURS')) || DEFAULT_TOURS;
+                this.faq = JSON.parse(localStorage.getItem('ST_FAQ')) || DEFAULT_FAQ;
                 this.bookings = JSON.parse(localStorage.getItem('ST_BOOKINGS')) || [];
-                
-                this.isAdminAuthenticated = sessionStorage.getItem('ST_ADMIN_AUTH') === 'true';
-                
-                // Sinkronisasi awal
-                this.save();
             },
 
-            save() {
-                localStorage.setItem('ST_SITE', JSON.stringify(this.site));
-                localStorage.setItem('ST_HERO', JSON.stringify(this.hero));
-                localStorage.setItem('ST_TOURS', JSON.stringify(this.tours));
-                localStorage.setItem('ST_GALLERY', JSON.stringify(this.gallery));
-                localStorage.setItem('ST_TESTIMONIALS', JSON.stringify(this.testimonials));
-                localStorage.setItem('ST_FAQ', JSON.stringify(this.faq));
-                localStorage.setItem('ST_TEAM', JSON.stringify(this.team));
-                localStorage.setItem('ST_BOOKINGS', JSON.stringify(this.bookings));
+            async save() {
+                // Fungsi ini hanya berjalan jika tidak menggunakan Supabase
+                if (!useSupabase) {
+                    localStorage.setItem('ST_SITE', JSON.stringify(this.site));
+                    localStorage.setItem('ST_HERO', JSON.stringify(this.hero));
+                    localStorage.setItem('ST_TOURS', JSON.stringify(this.tours));
+                    localStorage.setItem('ST_GALLERY', JSON.stringify(this.gallery));
+                    localStorage.setItem('ST_TESTIMONIALS', JSON.stringify(this.testimonials));
+                    localStorage.setItem('ST_FAQ', JSON.stringify(this.faq));
+                    localStorage.setItem('ST_TEAM', JSON.stringify(this.team));
+                    localStorage.setItem('ST_BOOKINGS', JSON.stringify(this.bookings));
+                }
             },
 
-            resetToDefault() {
-                if (confirm('Apakah Anda yakin ingin menyetel ulang database ke pengaturan awal pabrik? Seluruh data kustom Anda akan dihapus.')) {
+            async resetToDefault() {
+                const confirmed = await showConfirm(
+                    'Reset Factory Database',
+                    'Apakah Anda yakin ingin menyetel ulang database ke pengaturan awal? Seluruh data kustom Anda akan terhapus secara permanen.'
+                );
+                if (confirmed) {
+                    if (useSupabase) {
+                        showToast('Reset database di Supabase harus dilakukan via SQL Editor atau manual di dashboard Supabase Anda.', 'error');
+                        return;
+                    }
                     localStorage.clear();
-                    this.init();
+                    await this.init();
                     showToast('Database berhasil disetel ulang ke default!', 'success');
                     window.location.reload();
                 }
             }
         };
-
-        // Inisialisasi Database Lokal
-        AppState.init();
 
         const Components = {
             Header: () => {
@@ -395,7 +543,7 @@
                     </div>
                 </div>
                 <div class="container mx-auto px-6 py-6 flex flex-col md:flex-row justify-between items-center gap-4 text-gray-500 text-sm">
-                    <div>&copy; ${new Date().getFullYear()} ${AppState.site.name}. All rights reserved. Clean Client-Side CMS System.</div>
+                    <div>&copy; ${new Date().getFullYear()} ${AppState.site.name}. All rights reserved. ${useSupabase ? 'Cloud Supabase' : 'LocalStorage'} Sync Engine.</div>
                     <div class="flex gap-4">
                         <button onclick="AppState.resetToDefault()" class="hover:text-red-400 transition flex items-center gap-1"><i class="ph ph-arrow-counter-clockwise"></i> Reset Factory Database</button>
                     </div>
@@ -416,8 +564,8 @@
                         </div>
                         <div class="flex items-center gap-1 text-yellow-400 text-sm mb-4">
                             <i class="ph-fill ph-star"></i>
-                            <span class="text-dark font-semibold ml-1">${tour.rating}</span>
-                            <span class="text-gray-400">(${tour.reviews} ulasan)</span>
+                            <span class="text-dark font-semibold ml-1">${tour.rating || '5.0'}</span>
+                            <span class="text-gray-400">(${tour.reviews || '0'} ulasan)</span>
                         </div>
                         <p class="text-gray-500 text-sm mb-6 line-clamp-2 flex-grow">${tour.description}</p>
                         <div class="flex items-center justify-between border-t border-gray-100 pt-4 mt-auto">
@@ -573,7 +721,7 @@
                             <div class="flex flex-wrap gap-6 text-sm text-gray-200">
                                 <span class="flex items-center gap-2"><i class="ph ph-clock text-accent text-xl"></i> ${tour.duration}</span>
                                 <span class="flex items-center gap-2"><i class="ph ph-map-pin text-accent text-xl"></i> ${tour.location}</span>
-                                <span class="flex items-center gap-2"><i class="ph-fill ph-star text-accent text-xl"></i> ${tour.rating} (${tour.reviews} ulasan)</span>
+                                <span class="flex items-center gap-2"><i class="ph-fill ph-star text-accent text-xl"></i> ${tour.rating || '5.0'} (${tour.reviews || '0'} ulasan)</span>
                             </div>
                         </div>
                     </section>
@@ -898,7 +1046,7 @@
                                     <h1 class="text-3xl font-extrabold text-primary flex items-center gap-2">
                                         <i class="ph ph-shield-check"></i> Sibling Tours CMS Engine
                                     </h1>
-                                    <p class="text-sm text-gray-500">Ubah, tambah, atau hapus database konten secara real-time seperti PHP.</p>
+                                    <p class="text-sm text-gray-500">Ubah, tambah, atau hapus database konten secara real-time ke ${useSupabase ? 'Cloud Supabase' : 'LocalStorage'}.</p>
                                 </div>
                                 <div class="flex gap-3">
                                     <button onclick="handleAdminLogout()" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition">
@@ -908,7 +1056,7 @@
                             </div>
 
                             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                                <!-- Sidebar Kontrol / Tab -->
+                                <!-- Sidebar Kontrol -->
                                 <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-2 h-fit">
                                     <button onclick="renderAdminTab('tours')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-3 transition ${activeTab === 'tours' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-light'}">
                                         <i class="ph ph-package text-lg"></i> Kelola Paket Wisata
@@ -987,7 +1135,7 @@
                     </table>
                 </div>
 
-                <!-- Form Modal Kustom Tambah/Edit Tour (Disembunyikan secara default) -->
+                <!-- Form Modal Kustom Tambah/Edit Tour -->
                 <div id="tour-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
                     <div class="bg-white rounded-3xl max-w-3xl w-full h-[85vh] flex flex-col shadow-2xl animate-zoom-in">
                         <div class="p-6 border-b flex justify-between items-center">
@@ -1015,7 +1163,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Kategori Perahu / Resor *</label>
-                                    <select id="m-category" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-secondary" bg-white>
+                                    <select id="m-category" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-secondary text-sm bg-white">
                                         <option value="Liveaboard">Liveaboard</option>
                                         <option value="Speedboat">Speedboat</option>
                                         <option value="Resort">Resort</option>
@@ -1063,7 +1211,7 @@
             BookingsTab: () => `
                 <div class="border-b pb-4 mb-6">
                     <h3 class="text-xl font-bold text-primary">Daftar Reservasi & Booking Tamu</h3>
-                    <p class="text-xs text-gray-400 mt-1">Orderan ini tersimpan langsung secara otomatis sesaat sebelum tamu diarahkan ke WhatsApp.</p>
+                    <p class="text-xs text-gray-400 mt-1">Orderan ini tersimpan langsung secara otomatis di database cloud.</p>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -1089,7 +1237,7 @@
                                 ${AppState.bookings.map(book => `
                                     <tr class="hover:bg-gray-50/50">
                                         <td class="px-4 py-3 font-mono font-semibold text-gray-400">#${book.id}</td>
-                                        <td class="px-4 py-3 font-bold text-dark">${book.name} <span class="block text-[10px] text-gray-400 font-normal">${book.country}</span></td>
+                                        <td class="px-4 py-3 font-bold text-dark">${book.name} <span class="block text-[10px] text-gray-400 font-normal">${book.country || ''}</span></td>
                                         <td class="px-4 py-3">
                                             <a href="https://wa.me/${book.phone.replace(/[^0-9]/g, '')}" target="_blank" class="text-green-600 hover:underline flex items-center gap-1"><i class="ph ph-whatsapp-logo"></i> ${book.phone}</a>
                                             <span class="block text-[10px] text-gray-400 font-normal">${book.email}</span>
@@ -1098,9 +1246,9 @@
                                         <td class="px-4 py-3 text-dark font-medium">${book.date}</td>
                                         <td class="px-4 py-3">
                                             <select onchange="updateBookingStatus('${book.id}', this.value)" class="bg-light border border-gray-200 text-[10px] rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary">
-                                                <option value="Pending" ${book.status === 'Pending' ? 'selected' : ''}>? Pending</option>
-                                                <option value="Confirmed" ${book.status === 'Confirmed' ? 'selected' : ''}>? Confirmed</option>
-                                                <option value="Cancelled" ${book.status === 'Cancelled' ? 'selected' : ''}>? Cancelled</option>
+                                                <option value="Pending" ${book.status === 'Pending' ? 'selected' : ''}>⏳ Pending</option>
+                                                <option value="Confirmed" ${book.status === 'Confirmed' ? 'selected' : ''}>✅ Confirmed</option>
+                                                <option value="Cancelled" ${book.status === 'Cancelled' ? 'selected' : ''}>❌ Cancelled</option>
                                             </select>
                                         </td>
                                         <td class="px-4 py-3 text-right">
@@ -1172,7 +1320,7 @@
                 <form id="faq-form" onsubmit="saveFaqData(event)" class="space-y-6">
                     <div id="faq-rows" class="space-y-4">
                         ${AppState.faq.map((item, i) => `
-                            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 relative group">
+                            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 relative group" data-faq-id="${item.id || ''}">
                                 <button type="button" onclick="this.parentElement.remove()" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-600 transition shadow text-xs"><i class="ph ph-trash"></i></button>
                                 <div class="space-y-3">
                                     <input type="text" placeholder="Pertanyaan (Question)" value="${item.q}" required class="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs font-semibold">
@@ -1188,7 +1336,6 @@
             `,
 
             ExportTab: () => {
-                // Generate format script lengkap
                 const dbJson = JSON.stringify({
                     site: AppState.site,
                     hero: AppState.hero,
@@ -1199,11 +1346,11 @@
                 return `
                     <div class="border-b pb-4 mb-6">
                         <h3 class="text-xl font-bold text-primary">Ekspor Database Konten</h3>
-                        <p class="text-xs text-gray-400 mt-1">Anda dapat mendownload seluruh database buatan Anda untuk dijadikan file cadangan atau dimasukkan kembali ke file server.</p>
+                        <p class="text-xs text-gray-400 mt-1">Anda dapat mendownload seluruh database buatan Anda untuk dijadikan file cadangan.</p>
                     </div>
 
                     <div class="space-y-6">
-                        <p class="text-sm text-gray-600 leading-relaxed">Website ini dirancang secara modern dengan arsitektur masa depan. Seluruh perubahan input data di atas telah tersimpan secara instan di LocalStorage komputer Anda. Jika Anda ingin menyematkannya secara permanen, cukup salin data JSON di bawah ini.</p>
+                        <p class="text-sm text-gray-600 leading-relaxed">Website ini dirancang secara modern. Seluruh perubahan input data di atas telah tersimpan secara instan di database Anda. Jika Anda ingin menyematkannya secara manual ke dalam file JSON server, cukup salin data di bawah ini.</p>
                         
                         <div class="relative">
                             <textarea id="db-copy-box" readonly rows="12" class="w-full p-4 font-mono text-xs bg-gray-900 text-green-400 rounded-2xl border-none focus:ring-0 select-all">${dbJson}</textarea>
@@ -1222,11 +1369,14 @@
             footer: document.getElementById('footer-container'),
             loader: document.getElementById('loader'),
 
-            init() {
+            async init() {
+                // Inisialisasi State (Tarik data dari Supabase/LocalStorage)
+                await AppState.init();
+
                 this.header.innerHTML = Components.Header();
                 this.footer.innerHTML = Components.Footer();
                 
-                // Atur link tombol Whatsapp floating
+                // Hubungkan tombol Whatsapp melayang
                 document.getElementById('floating-wa').href = `https://wa.me/${AppState.site.whatsapp}?text=Halo Sibling Tours, saya ingin menanyakan tentang paket tour premium ke Labuan Bajo.`;
 
                 // Event Listeners
@@ -1236,7 +1386,7 @@
 
                 this.handleRoute();
 
-                // Matikan loader perlahan
+                // Tutup loader
                 setTimeout(() => {
                     this.loader.style.opacity = '0';
                     setTimeout(() => this.loader.style.display = 'none', 500);
@@ -1251,7 +1401,6 @@
 
                 window.scrollTo({ top: 0, behavior: 'auto' });
 
-                // Ubah style header
                 if (route === 'home') {
                     this.header.classList.add('header-transparent');
                     this.header.classList.remove('header-scrolled', 'bg-white', 'text-primary', 'shadow-md');
@@ -1260,7 +1409,7 @@
                     this.header.classList.add('bg-white', 'text-primary', 'shadow-md');
                 }
 
-                // Tutup menu mobile jika terbuka
+                // Tutup menu seluler
                 document.getElementById('mobile-menu').classList.add('translate-x-full');
 
                 let html = '';
@@ -1272,22 +1421,18 @@
                     case 'gallery': html = Views.Gallery(); break;
                     case 'about': html = Views.About(); break;
                     case 'contact': html = Views.Contact(); break;
-                    
-                    // Route Admin CMS
                     case 'admin': 
                         html = AppState.isAdminAuthenticated ? AdminView.Dashboard() : AdminView.Login(); 
                         break;
-                        
                     default: html = Views.NotFound(); break;
                 }
 
                 this.root.innerHTML = html;
                 
-                // Re-render Header untuk sinkronisasi tombol status admin
+                // Re-sync Header
                 this.header.innerHTML = Components.Header();
                 this.setupMobileMenu();
                 
-                // Inisialisasi animasi scroll
                 setTimeout(() => this.initScrollAnimations(), 100);
             },
 
@@ -1333,12 +1478,11 @@
             }
         };
 
-        
         // Custom Toast Notification Maker
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
-            const bgClass = type === 'success' ? 'bg-emerald-500' : 'bg-red-500';
-            const iconClass = type === 'success' ? 'ph-check-circle' : 'ph-warning';
+            const bgClass = type === 'success' ? 'bg-emerald-500' : (type === 'info' ? 'bg-blue-500' : 'bg-red-500');
+            const iconClass = type === 'success' ? 'ph-check-circle' : (type === 'info' ? 'ph-info' : 'ph-warning');
             
             const toast = document.createElement('div');
             toast.className = `${bgClass} text-white px-5 py-4 rounded-2xl shadow-xl flex items-center gap-3 animate-fade-in-up max-w-sm pointer-events-auto`;
@@ -1368,8 +1512,8 @@
             }
         };
 
-        // Submit Form Booking & Persist Data
-        window.handleBookingFormSubmit = (event) => {
+        // Submit Form Booking & Persist Data (Supabase & LocalStorage Fallback)
+        window.handleBookingFormSubmit = async (event) => {
             event.preventDefault();
             
             const name = document.getElementById('b-name').value;
@@ -1381,28 +1525,48 @@
             const guests = document.getElementById('b-guests').value;
             const notes = document.getElementById('b-notes').value || 'Tidak ada';
 
-            // 1. Simpan Data ke State Database (Mirip Insert Query PHP)
+            const bookingId = crypto.randomUUID().slice(0, 8);
             const newBooking = {
-                id: crypto.randomUUID().slice(0, 8),
+                id: bookingId,
                 name, email, phone, country, tour, date, guests, notes,
                 status: 'Pending'
             };
-            
-            AppState.bookings.push(newBooking);
-            AppState.save();
 
-            // 2. Tampilkan Toast Sukses
-            showToast('Reservasi Anda berhasil disimpan di database!', 'success');
+            showToast('Menyimpan pesanan ke database...', 'info');
 
-            // 3. Alihkan Pengunjung ke WhatsApp Otomatis
-            setTimeout(() => {
-                const message = `*Konfirmasi Pemesanan Sibling Tours*%0A%0A*ID Pemesanan:* #${newBooking.id}%0A*Nama:* ${name}%0A*Email:* ${email}%0A*WhatsApp:* ${phone}%0A*Kebangsaan:* ${country}%0A*Paket:* ${tour}%0A*Tanggal Mulai:* ${date}%0A*Pax:* ${guests} Orang%0A*Catatan:* ${notes}`;
-                const waUrl = `https://wa.me/${AppState.site.whatsapp}?text=${message}`;
-                window.open(waUrl, '_blank');
-                
-                // Redirect kembali ke halaman beranda
-                window.location.hash = '#home';
-            }, 1500);
+            try {
+                if (useSupabase && supabaseClient) {
+                    const { error } = await supabaseClient.from('bookings').insert([{
+                        id: newBooking.id,
+                        name: newBooking.name,
+                        email: newBooking.email,
+                        phone: newBooking.phone,
+                        country: newBooking.country,
+                        tour: newBooking.tour,
+                        date: newBooking.date,
+                        guests: parseInt(newBooking.guests),
+                        notes: newBooking.notes,
+                        status: newBooking.status
+                    }]);
+                    if (error) throw error;
+                } else {
+                    AppState.bookings.push(newBooking);
+                    await AppState.save();
+                }
+
+                showToast('Booking berhasil tersimpan secara aman!', 'success');
+
+                setTimeout(() => {
+                    const message = `*Konfirmasi Pemesanan Sibling Tours*%0A%0A*ID Pemesanan:* #${newBooking.id}%0A*Nama:* ${name}%0A*Email:* ${email}%0A*WhatsApp:* ${phone}%0A*Kebangsaan:* ${country}%0A*Paket:* ${tour}%0A*Tanggal Mulai:* ${date}%0A*Pax:* ${guests} Orang%0A*Catatan:* ${notes}`;
+                    const waUrl = `https://wa.me/${AppState.site.whatsapp}?text=${message}`;
+                    window.open(waUrl, '_blank');
+                    window.location.hash = '#home';
+                }, 1500);
+
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal mengirim data booking, periksa koneksi Anda.', 'error');
+            }
         };
 
         // login Administrator
@@ -1414,10 +1578,10 @@
             if (user === 'admin' && pass === 'admin123') {
                 AppState.isAdminAuthenticated = true;
                 sessionStorage.setItem('ST_ADMIN_AUTH', 'true');
-                showToast('Login berhasil! Selamat datang kembali Admin.', 'success');
+                showToast('Login berhasil! Selamat datang Admin.', 'success');
                 window.location.hash = '#admin';
             } else {
-                showToast('Kredensial salah! Silakan coba lagi.', 'error');
+                showToast('Kredensial salah! Coba admin / admin123', 'error');
             }
         };
 
@@ -1428,12 +1592,11 @@
             window.location.hash = '#home';
         };
 
-        window.renderAdminTab = (tab) => {
-            AppState.init(); // Muat data segar
+        window.renderAdminTab = async (tab) => {
+            await AppState.init(); // Refresh data dari cloud/lokal
             const container = document.getElementById('app-root');
             container.innerHTML = AdminView.Dashboard(tab);
         };
-
 
         // FAQ CRUD
         window.addFaqRow = () => {
@@ -1450,12 +1613,12 @@
             rows.appendChild(newDiv);
         };
 
-        window.saveFaqData = (event) => {
+        window.saveFaqData = async (event) => {
             event.preventDefault();
             const rows = document.querySelectorAll('#faq-rows > div');
             const newFaqs = [];
             
-            rows.forEach(row => {
+            rows.forEach((row, index) => {
                 const q = row.querySelector('input').value;
                 const a = row.querySelector('textarea').value;
                 if (q && a) {
@@ -1463,50 +1626,123 @@
                 }
             });
 
-            AppState.faq = newFaqs;
-            AppState.save();
-            showToast('Daftar FAQ berhasil diperbarui!', 'success');
-            window.renderAdminTab('faq');
+            showToast('Menyimpan perubahan FAQ...', 'info');
+
+            try {
+                if (useSupabase && supabaseClient) {
+                    const { error: delErr } = await supabaseClient.from('faqs').delete().neq('id', 0);
+                    if (delErr) throw delErr;
+                    
+                    const { error: insErr } = await supabaseClient.from('faqs').insert(newFaqs);
+                    if (insErr) throw insErr;
+                } else {
+                    AppState.faq = newFaqs;
+                    await AppState.save();
+                }
+
+                showToast('Daftar FAQ berhasil diperbarui!', 'success');
+                await window.renderAdminTab('faq');
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal memperbarui FAQ di server.', 'error');
+            }
         };
 
-        // Site Settings Editor
-        window.saveSiteSettings = (event) => {
+        // Site Settings Editor (Supabase / LocalStorage Fallback)
+        window.saveSiteSettings = async (event) => {
             event.preventDefault();
             
-            AppState.site.logo = document.getElementById('s-logo').value;
-            AppState.site.tagline = document.getElementById('s-tagline').value;
-            AppState.site.email = document.getElementById('s-email').value;
-            AppState.site.whatsapp = document.getElementById('s-whatsapp').value;
-            AppState.site.phone = document.getElementById('s-phone').value;
-            AppState.site.address = document.getElementById('s-address').value;
-            AppState.site.aboutSnippet = document.getElementById('s-about').value;
-            AppState.site.socials.instagram = document.getElementById('s-instagram').value;
+            const siteUpdates = {
+                logo: document.getElementById('s-logo').value,
+                tagline: document.getElementById('s-tagline').value,
+                email: document.getElementById('s-email').value,
+                whatsapp: document.getElementById('s-whatsapp').value,
+                phone: document.getElementById('s-phone').value,
+                address: document.getElementById('s-address').value,
+                aboutSnippet: document.getElementById('s-about').value,
+                socials: {
+                    instagram: document.getElementById('s-instagram').value,
+                    facebook: AppState.site.socials.facebook,
+                    youtube: AppState.site.socials.youtube
+                }
+            };
 
-            AppState.save();
-            showToast('Pengaturan website berhasil disimpan!', 'success');
-            window.renderAdminTab('site');
+            showToast('Menyimpan pengaturan...', 'info');
+
+            try {
+                if (useSupabase && supabaseClient) {
+                    const { error } = await supabaseClient.from('site_settings').upsert({
+                        id: 1,
+                        logo: siteUpdates.logo,
+                        tagline: siteUpdates.tagline,
+                        email: siteUpdates.email,
+                        whatsapp: siteUpdates.whatsapp,
+                        phone: siteUpdates.phone,
+                        address: siteUpdates.address,
+                        about_snippet: siteUpdates.aboutSnippet,
+                        instagram: siteUpdates.socials.instagram
+                    });
+                    if (error) throw error;
+                } else {
+                    AppState.site = siteUpdates;
+                    await AppState.save();
+                }
+
+                showToast('Pengaturan website berhasil disimpan!', 'success');
+                await window.renderAdminTab('site');
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal memperbarui pengaturan website.', 'error');
+            }
         };
 
         // Booking status update
-        window.updateBookingStatus = (id, newStatus) => {
-            const booking = AppState.bookings.find(b => b.id === id);
-            if (booking) {
-                booking.status = newStatus;
-                AppState.save();
-                showToast(`Status booking #${id} diubah menjadi: ${newStatus}`, 'success');
+        window.updateBookingStatus = async (id, newStatus) => {
+            showToast('Memperbarui status...', 'info');
+            try {
+                if (useSupabase && supabaseClient) {
+                    const { error } = await supabaseClient.from('bookings').update({ status: newStatus }).eq('id', id);
+                    if (error) throw error;
+                } else {
+                    const booking = AppState.bookings.find(b => b.id === id);
+                    if (booking) {
+                        booking.status = newStatus;
+                        await AppState.save();
+                    }
+                }
+                showToast(`Status booking #${id} diperbarui.`, 'success');
+                await window.renderAdminTab('bookings');
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal mengubah status di server.', 'error');
             }
         };
 
-        window.deleteBooking = (id) => {
-            if (confirm('Hapus booking ini dari database?')) {
-                AppState.bookings = AppState.bookings.filter(b => b.id !== id);
-                AppState.save();
-                showToast('Booking berhasil dihapus.', 'success');
-                window.renderAdminTab('bookings');
+        window.deleteBooking = async (id) => {
+            const confirmed = await showConfirm(
+                'Hapus Data Booking',
+                `Apakah Anda benar-benar yakin ingin menghapus catatan pesanan #${id} dari database?`
+            );
+            if (confirmed) {
+                showToast('Menghapus data...', 'info');
+                try {
+                    if (useSupabase && supabaseClient) {
+                        const { error } = await supabaseClient.from('bookings').delete().eq('id', id);
+                        if (error) throw error;
+                    } else {
+                        AppState.bookings = AppState.bookings.filter(b => b.id !== id);
+                        await AppState.save();
+                    }
+                    showToast('Booking berhasil dihapus.', 'success');
+                    await window.renderAdminTab('bookings');
+                } catch (err) {
+                    console.error(err);
+                    showToast('Gagal menghapus booking.', 'error');
+                }
             }
         };
 
-        // Tour Packages CRUD Modal and actions
+        // Tour Packages CRUD Actions
         window.openTourModal = (id = '') => {
             const modal = document.getElementById('tour-modal');
             const titleEl = document.getElementById('modal-title');
@@ -1514,7 +1750,6 @@
             form.reset();
 
             if (id) {
-                // Mode Edit
                 const tour = AppState.tours.find(t => t.id === id);
                 if (tour) {
                     titleEl.innerText = "Edit Detail Paket Tour";
@@ -1533,7 +1768,6 @@
                     document.getElementById('m-itinerary').value = tour.itinerary;
                 }
             } else {
-                // Mode Tambah Baru
                 titleEl.innerText = "Tambah Paket Tour Baru";
                 document.getElementById('m-tour-id').value = '';
             }
@@ -1545,7 +1779,7 @@
             document.getElementById('tour-modal').classList.add('hidden');
         };
 
-        window.saveTourData = () => {
+        window.saveTourData = async () => {
             const form = document.getElementById('tour-form');
             if(!form.checkValidity()) {
                 showToast('Harap lengkapi semua bidang isian wajib bintang (*)!', 'error');
@@ -1553,8 +1787,9 @@
             }
 
             const id = document.getElementById('m-tour-id').value;
+            const targetId = id || 't' + (AppState.tours.length + 1);
             const newTour = {
-                id: id || 't' + (AppState.tours.length + 1),
+                id: targetId,
                 title: document.getElementById('m-title').value,
                 slug: document.getElementById('m-slug').value,
                 price: document.getElementById('m-price').value,
@@ -1572,31 +1807,70 @@
                 availability: true
             };
 
-            if (id) {
-                // Edit Data yang sudah ada (Update Query)
-                const index = AppState.tours.findIndex(t => t.id === id);
-                if (index !== -1) {
-                    newTour.rating = AppState.tours[index].rating;
-                    newTour.reviews = AppState.tours[index].reviews;
-                    AppState.tours[index] = newTour;
-                }
-            } else {
-                // Tambah baru (Insert Query)
-                AppState.tours.push(newTour);
-            }
+            showToast('Menyinkronkan data paket tour...', 'info');
 
-            AppState.save();
-            closeTourModal();
-            showToast('Paket tour berhasil disimpan di database!', 'success');
-            window.renderAdminTab('tours');
+            try {
+                if (useSupabase && supabaseClient) {
+                    const { error } = await supabaseClient.from('tours').upsert({
+                        id: newTour.id,
+                        title: newTour.title,
+                        slug: newTour.slug,
+                        price: newTour.price,
+                        duration: newTour.duration,
+                        category: newTour.category,
+                        location: newTour.location,
+                        thumbnail: newTour.thumbnail,
+                        description: newTour.description,
+                        highlights: newTour.highlights,
+                        included: newTour.included,
+                        excluded: newTour.excluded,
+                        itinerary: newTour.itinerary
+                    });
+                    if (error) throw error;
+                } else {
+                    if (id) {
+                        const index = AppState.tours.findIndex(t => t.id === id);
+                        if (index !== -1) {
+                            newTour.rating = AppState.tours[index].rating;
+                            newTour.reviews = AppState.tours[index].reviews;
+                            AppState.tours[index] = newTour;
+                        }
+                    } else {
+                        AppState.tours.push(newTour);
+                    }
+                    await AppState.save();
+                }
+
+                showToast('Paket tour berhasil disimpan!', 'success');
+                closeTourModal();
+                await window.renderAdminTab('tours');
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal menyimpan paket tour ke server cloud.', 'error');
+            }
         };
 
-        window.deleteTour = (id) => {
-            if (confirm('Apakah Anda yakin ingin menghapus paket tour ini secara permanen dari database?')) {
-                AppState.tours = AppState.tours.filter(t => t.id !== id);
-                AppState.save();
-                showToast('Paket tour berhasil dihapus!', 'success');
-                window.renderAdminTab('tours');
+        window.deleteTour = async (id) => {
+            const confirmed = await showConfirm(
+                'Hapus Paket Wisata',
+                'Apakah Anda yakin ingin menghapus paket tour ini secara permanen dari server?'
+            );
+            if (confirmed) {
+                showToast('Menghapus paket...', 'info');
+                try {
+                    if (useSupabase && supabaseClient) {
+                        const { error } = await supabaseClient.from('tours').delete().eq('id', id);
+                        if (error) throw error;
+                    } else {
+                        AppState.tours = AppState.tours.filter(t => t.id !== id);
+                        await AppState.save();
+                    }
+                    showToast('Paket tour berhasil dihapus!', 'success');
+                    await window.renderAdminTab('tours');
+                } catch (err) {
+                    console.error(err);
+                    showToast('Gagal menghapus paket tour dari server.', 'error');
+                }
             }
         };
 
