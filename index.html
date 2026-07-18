@@ -1636,7 +1636,14 @@
                 AppState.isAdminAuthenticated = true;
                 sessionStorage.setItem('ST_ADMIN_AUTH', 'true');
                 showToast('Login berhasil! Selamat datang Admin.', 'success');
-                window.location.hash = '#admin';
+                
+                // Jika alamat hash saat ini sudah di '#admin', perubahan hash tidak akan memicu event hashchange.
+                // Kita panggil penangan rute secara manual untuk langsung memuat dashboard.
+                if (window.location.hash === '#admin') {
+                    App.handleRoute();
+                } else {
+                    window.location.hash = '#admin';
+                }
             } else {
                 showToast('Kredensial salah! Silakan coba lagi.', 'error');
             }
