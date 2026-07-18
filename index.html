@@ -275,8 +275,8 @@
         ];
 
         // KREDENSIAL SUPABASE (Masukkan API Keys Proyek Anda di Sini)
-        const SUPABASE_URL = ""; 
-        const SUPABASE_KEY = ""; 
+        const SUPABASE_URL = "https://fbveofdacvnkvrxbvzds.supabase.co/rest/v1/"; 
+        const SUPABASE_KEY = "sb_publishable_tZ64j2LZm5olA-olkNLd-g_RKrc74ls"; 
 
         // Menggunakan 'supabaseClient' untuk menghindari collision dengan global identifier library 'supabase'
         let supabaseClient = null;
@@ -1530,23 +1530,28 @@
             }
         };
 
-        // Custom Toast Notification Maker
+        // Custom Toast Notification Maker (Sistem Notifikasi Otomatis)
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const bgClass = type === 'success' ? 'bg-emerald-500' : (type === 'info' ? 'bg-blue-500' : 'bg-red-500');
             const iconClass = type === 'success' ? 'ph-check-circle' : (type === 'info' ? 'ph-info' : 'ph-warning');
             
             const toast = document.createElement('div');
-            toast.className = `${bgClass} text-white px-5 py-4 rounded-2xl shadow-xl flex items-center gap-3 animate-fade-in-up max-w-sm pointer-events-auto`;
+            // Menambahkan transisi Tailwind CSS agar proses keluar-masuk elemen berjalan halus
+            toast.className = `${bgClass} text-white px-5 py-4 rounded-2xl shadow-xl flex items-center gap-3 animate-fade-in-up max-w-sm pointer-events-auto transition-all duration-500 transform translate-y-0 opacity-100`;
             toast.innerHTML = `
                 <i class="ph ${iconClass} text-2xl shrink-0"></i>
                 <div class="text-sm font-semibold">${message}</div>
             `;
             
             container.appendChild(toast);
+            
+            // Fading out dan penghapusan otomatis dari DOM yang aman (Double Timeout)
             setTimeout(() => {
-                toast.classList.add('opacity-0');
-                toast.addEventListener('transitionend', () => toast.remove());
+                toast.classList.add('opacity-0', '-translate-y-4');
+                setTimeout(() => {
+                    toast.remove();
+                }, 500);
             }, 3000);
         }
 
