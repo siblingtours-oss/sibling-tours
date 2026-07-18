@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head> <!-- Supabase JS Client CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Sibling Tours | Premium Labuan Bajo Experiences & CMS</title>
+    <meta name="description" content="Discover the beauty of Labuan Bajo and Komodo National Park with Sibling Tours. Premium, luxury tropical travel experiences.">
+    <meta name="keywords" content="Labuan Bajo, Komodo, Tours, Travel, Indonesia, Premium Travel, Sibling Tours">
+    <meta name="author" content="Sibling Tours">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://siblingtours.com/">
+    <meta property="og:title" content="Sibling Tours | Premium Labuan Bajo Experiences">
+    <meta property="og:description" content="Discover the beauty of Labuan Bajo and Komodo National Park with Sibling Tours.">
+    
+    <!-- Fonts: Poppins & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons (Phosphor Icons) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0A4D68',
+                        secondary: '#088395',
+                        accent: '#FFD166',
+                        light: '#F8FAFC',
+                        dark: '#0F172A'
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
+                        'zoom-in': 'zoomIn 0.8s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        zoomIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.95)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --primary: #0A4D68;
+            --secondary: #088395;
+            --accent: #FFD166;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #F8FAFC;
+            color: #334155;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        /* Animation utilities */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Loading Screen */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: var(--primary);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Header Scroll Effect */
+        .header-scrolled {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .header-scrolled .nav-link { color: var(--primary); }
+        .header-transparent { background: transparent; }
+        .header-transparent .nav-link { color: white; }
+
+        /* Gallery Masonry */
+        .gallery-masonry {
+            column-count: 1;
+            column-gap: 1rem;
+        }
+        @media (min-width: 640px) { .gallery-masonry { column-count: 2; } }
+        @media (min-width: 1024px) { .gallery-masonry { column-count: 3; } }
+        .gallery-item { break-inside: avoid; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+
+    <!-- Loader Screen -->
+    <div id="loader"><div class="spinner"></div></div>
+
+    <!-- Custom Toast Notification Box (Menggantikan alert bawaan browser) -->
+    <div id="toast-container" class="fixed top-24 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- Layout Wrapper -->
+    <header id="header-container" class="fixed w-full top-0 z-50 transition-all duration-300 header-transparent"></header>
+    
+    <main id="app-root" class="min-h-screen"></main>
+    
+    <footer id="footer-container" class="bg-dark text-white pt-16 pb-8"></footer>
+
+    <!-- WhatsApp Floating Action Button -->
+    <a href="#" id="floating-wa" target="_blank" class="fixed bottom-6 right-6 bg-[#25D366] text-white p-4 rounded-full shadow-lg hover:scale-110 transition-transform z-40 flex items-center justify-center">
+        <i class="ph-fill ph-whatsapp-logo text-3xl"></i>
+    </a>
+
+    <script>
+        // Data Default (Sebelum diedit melalui dashboard CMS)
+        const DEFAULT_SITE = {
+            name: "Sibling Tours",
+            tagline: "Premium Labuan Bajo Experiences",
+            logo: "Sibling Tours",
+            email: "hello@siblingtours.com",
+            phone: "+62 812 3456 7890",
+            whatsapp: "6281234567890",
+            address: "Jl. Soekarno Hatta, Labuan Bajo, Komodo, Manggarai Barat, NTT",
+            socials: {
+                instagram: "https://instagram.com",
+                facebook: "https://facebook.com",
+                youtube: "https://youtube.com"
+            },
+            aboutSnippet: "Kami adalah operator tur premium yang mengkhususkan diri dalam menciptakan petualangan mewah tak terlupakan melintasi keindahan alam Taman Nasional Komodo."
+        };
+
+        const DEFAULT_HERO = {
+            title: "Temukan Keajaiban Komodo bersama Kami",
+            subtitle: "Petualangan tropis premium yang dirancang khusus untuk kenyamanan jiwa Anda.",
+            image: "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&q=80&w=2070",
+            ctaText: "Jelajahi Paket Wisata",
+            ctaLink: "#tours"
+        };
+
+        const DEFAULT_TOURS = [
+            {
+                id: "t1",
+                slug: "premium-komodo-3d2n",
+                title: "Premium Komodo 3D2N Luxury Phinisi",
+                price: "Rp 6.500.000",
+                duration: "3 Hari / 2 Malam",
+                category: "Liveaboard",
+                rating: 4.9,
+                reviews: 128,
+                location: "Taman Nasional Komodo",
+                thumbnail: "https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?auto=format&fit=crop&q=80&w=800",
+                description: "Rasakan kemewahan tiada tanding di atas kapal Phinisi tradisional berstandar internasional. Berlayar melintasi gugusan pulau tropis memukau, trekking melihat naga purba Komodo, dan menyelam di air laut sejernih kristal.",
+                highlights: "Padar Island Sunrise, Komodo Dragon Trekking, Pink Beach Snorkeling, Manta Point Swimming, Sunset Kalong Island",
+                included: "Makan 3x Sehari (B,L,D), Alat Snorkeling Premium, Tour Guide Profesional, Cabin Kapal Full AC, Dokumentasi Drone",
+                excluded: "Tiket Masuk Taman Nasional Komodo, Penerbangan PP, Belanja Pribadi, Tip Crew Kapal",
+                itinerary: "Hari 1: Penjemputan - Pulau Kelor (Snorkeling) - Pulau Rinca (Trekking Komodo) - Pulau Kalong (Matahari terbenam & jutaan kelelawar) | Hari 2: Pulau Padar (Sunrise hiking) - Pink Beach (Relax & Swim) - Manta Point (Snorkeling with Mantas) | Hari 3: Pulau Kanawa (Snorkeling) - Kembali ke Labuan Bajo - Drop Bandara",
+                availability: true
+            },
+            {
+                id: "t2",
+                slug: "one-day-speedboat",
+                title: "One Day Speedboat Adventure (6 Destinasi)",
+                price: "Rp 1.450.000",
+                duration: "1 Hari",
+                category: "Speedboat",
+                rating: 4.8,
+                reviews: 245,
+                location: "Taman Nasional Komodo",
+                thumbnail: "https://images.unsplash.com/photo-1621991468822-77eb60c5c64c?auto=format&fit=crop&q=80&w=800",
+                description: "Waktu Anda terbatas? Kunjungi 6 destinasi ikonik terpopuler di Kepulauan Komodo dalam satu hari penuh menggunakan Speedboat modern kami yang cepat dan sangat nyaman.",
+                highlights: "Pulau Padar, Pulau Komodo, Pink Beach, Manta Point, Taka Makassar, Pulau Kanawa",
+                included: "Lunch Box Premium, Air Mineral Dingin, Alat Snorkeling, Tiket Masuk Rinca, Jaket Keselamatan, Pemandu Wisata",
+                excluded: "Tiket Penerbangan, Pengeluaran Pribadi, Tip Guide",
+                itinerary: "Pagi hari berkumpul di Dermaga KP3. Menuju Pulau Padar untuk trekking melihat pemandangan 3 teluk. Dilanjutkan ke Pulau Komodo melihat reptil raksasa. Makan siang di Pink Beach dan berfoto. Snorkeling di Manta Point & berenang di pasir timbul Taka Makassar. Terakhir snorkeling santai di Pulau Kanawa sebelum kembali ke Labuan Bajo.",
+                availability: true
+            },
+            {
+                id: "t3",
+                slug: "private-island-retreat",
+                title: "Private Island Resort Luxury Escape",
+                price: "Rp 12.000.000",
+                duration: "4 Hari / 3 Malam",
+                category: "Resort",
+                rating: 5.0,
+                reviews: 42,
+                location: "Seraya Island Resort",
+                thumbnail: "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&q=80&w=800",
+                description: "Melarikan diri ke pulau resort mewah terpencil. Bangun dengan pemandangan lautan turquoise di depan pintu villa Anda, nikmati makan malam romantis di tepi pantai, dan segarkan jiwa Anda.",
+                highlights: "Private Beachfront Beach Villa, Pasangan Spa Treatment, Romantic Candlelight Beach Dinner, Private Sunset Cruise",
+                included: "Akomodasi Luxury Villa, Makan Pagi-Siang-Malam Kustom, Transportasi Speedboat PP, 1x Pasangan Spa, Akses Private Beach",
+                excluded: "Tiket Penerbangan, Pengeluaran Bar Alkohol, Tour Tambahan",
+                itinerary: "Hari 1: Penjemputan di Bandara Labuan Bajo, Transfer kapal ke Pulau Seraya, Welcome Drink, Santai Sore. | Hari 2: Spa Treatment Pasangan di pagi hari, Snorkeling di terumbu karang private resort, Sunset Dinner romantis di pantai. | Hari 3: Berlayar sore menikmati sunset dengan kapal private, makan malam mewah chef kustom. | Hari 4: Sarapan pagi, checkout resort, transfer kembali ke Bandara Labuan Bajo.",
+                availability: true
+            }
+        ];
+
+        const DEFAULT_GALLERY = [
+            { category: "nature", url: "https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?auto=format&fit=crop&w=600" },
+            { category: "boats", url: "https://images.unsplash.com/photo-1534008897995-27a23e859048?auto=format&fit=crop&w=600" },
+            { category: "wildlife", url: "https://images.unsplash.com/photo-1600216668388-344cb89d9774?auto=format&fit=crop&w=600" },
+            { category: "nature", url: "https://images.unsplash.com/photo-1621991468822-77eb60c5c64c?auto=format&fit=crop&w=600" }
+        ];
+
+        const DEFAULT_TESTIMONIALS = [
+            { name: "Andi Wijaya", country: "Jakarta, Indonesia", text: "Pengalaman luar biasa! Kapal Phinisi Sibling Tours bersih, mewah, dan masakan chef kapalnya sangat enak setara restoran bintang lima.", rating: 5 },
+            { name: "Sarah Jenkins", country: "Melbourne, Australia", text: "The speedboat tour was brilliantly organized. Friendly local guides who knew exactly where to find the manta rays and safe trekking paths.", rating: 5 }
+        ];
+
+        const DEFAULT_FAQ = [
+            { q: "Kapan waktu terbaik berkunjung ke Labuan Bajo?", a: "Musim kemarau antara April hingga Desember sangat ideal. Di bulan September-November biasanya laut sangat tenang dan cuaca sangat bersahabat untuk aktivitas menyelam." },
+            { q: "Apakah tur ini aman untuk anak-anak dan lansia?", a: "Sangat aman. Namun untuk trekking seperti di Pulau Padar memerlukan pengawasan ekstra karena rutenya menanjak. Kami juga menyediakan opsi rute yang lebih bersahabat." },
+            { q: "Bagaimana cara melakukan pembayaran?", a: "Kami menerima transfer bank resmi, kartu kredit, dan mata uang asing tunai saat kedatangan di kantor pusat Sibling Tours Labuan Bajo." }
+        ];
+
+        const DEFAULT_TEAM = [
+            { name: "Capt. Wayan Kusuma", role: "Founder & Lead Expedition Guide", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300" },
+            { name: "Dewi Lestari", role: "Customer Service & Booking Operations", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300" }
+        ];
+
+        const AppState = {
+            site: null,
+            hero: null,
+            tours: [],
+            gallery: [],
+            testimonials: [],
+            faq: [],
+            team: [],
+            bookings: [], // Menyimpan pesanan masuk
+            isAdminAuthenticated: false,
+
+            init() {
+                // Memuat data dari LocalStorage atau fallback ke default constants (seperti database PHP)
+                this.site = JSON.parse(localStorage.getItem('ST_SITE')) || DEFAULT_SITE;
+                this.hero = JSON.parse(localStorage.getItem('ST_HERO')) || DEFAULT_HERO;
+                this.tours = JSON.parse(localStorage.getItem('ST_TOURS')) || DEFAULT_TOURS;
+                this.gallery = JSON.parse(localStorage.getItem('ST_GALLERY')) || DEFAULT_GALLERY;
+                this.testimonials = JSON.parse(localStorage.getItem('ST_TESTIMONIALS')) || DEFAULT_TESTIMONIALS;
+                this.faq = JSON.parse(localStorage.getItem('ST_FAQ')) || DEFAULT_FAQ;
+                this.team = JSON.parse(localStorage.getItem('ST_TEAM')) || DEFAULT_TEAM;
+                this.bookings = JSON.parse(localStorage.getItem('ST_BOOKINGS')) || [];
+                
+                this.isAdminAuthenticated = sessionStorage.getItem('ST_ADMIN_AUTH') === 'true';
+                
+                // Sinkronisasi awal
+                this.save();
+            },
+
+            save() {
+                localStorage.setItem('ST_SITE', JSON.stringify(this.site));
+                localStorage.setItem('ST_HERO', JSON.stringify(this.hero));
+                localStorage.setItem('ST_TOURS', JSON.stringify(this.tours));
+                localStorage.setItem('ST_GALLERY', JSON.stringify(this.gallery));
+                localStorage.setItem('ST_TESTIMONIALS', JSON.stringify(this.testimonials));
+                localStorage.setItem('ST_FAQ', JSON.stringify(this.faq));
+                localStorage.setItem('ST_TEAM', JSON.stringify(this.team));
+                localStorage.setItem('ST_BOOKINGS', JSON.stringify(this.bookings));
+            },
+
+            resetToDefault() {
+                if (confirm('Apakah Anda yakin ingin menyetel ulang database ke pengaturan awal pabrik? Seluruh data kustom Anda akan dihapus.')) {
+                    localStorage.clear();
+                    this.init();
+                    showToast('Database berhasil disetel ulang ke default!', 'success');
+                    window.location.reload();
+                }
+            }
+        };
+
+        // Inisialisasi Database Lokal
+        AppState.init();
+
+        const Components = {
+            Header: () => {
+                const isAdmin = AppState.isAdminAuthenticated;
+                return `
+                <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+                    <a href="#home" class="text-2xl font-bold tracking-tighter nav-link flex items-center gap-2">
+                        <i class="ph ph-compass text-accent text-3xl"></i>
+                        ${AppState.site.logo}
+                    </a>
+                    <!-- Desktop Nav -->
+                    <nav class="hidden md:flex gap-8 items-center font-medium">
+                        <a href="#home" class="nav-link hover:text-accent transition-colors">Home</a>
+                        <a href="#about" class="nav-link hover:text-accent transition-colors">Tentang Kami</a>
+                        <a href="#tours" class="nav-link hover:text-accent transition-colors">Paket Wisata</a>
+                        <a href="#gallery" class="nav-link hover:text-accent transition-colors">Galeri</a>
+                        <a href="#contact" class="nav-link hover:text-accent transition-colors">Hubungi</a>
+                        
+                        ${isAdmin ? `
+                            <a href="#admin" class="bg-secondary text-white px-5 py-2 rounded-full font-semibold hover:bg-primary transition shadow flex items-center gap-2">
+                                <i class="ph ph-squares-four"></i> Dashboard CMS
+                            </a>
+                        ` : `
+                            <a href="#admin" class="text-xs opacity-75 hover:opacity-100 flex items-center gap-1"><i class="ph ph-lock-key"></i> Admin Login</a>
+                        `}
+                        
+                        <a href="#tours" class="bg-accent text-primary px-6 py-2 rounded-full font-semibold hover:bg-white transition-all shadow-md">Pesan Sekarang</a>
+                    </nav>
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-btn" class="md:hidden nav-link text-3xl">
+                        <i class="ph ph-list"></i>
+                    </button>
+                </div>
+                <!-- Mobile Nav Overlay -->
+                <div id="mobile-menu" class="fixed inset-0 bg-primary/95 backdrop-blur-md text-white flex flex-col justify-center items-center gap-8 text-2xl font-medium transform translate-x-full transition-transform duration-300 z-50">
+                    <button id="close-menu-btn" class="absolute top-6 right-6 text-4xl hover:text-accent"><i class="ph ph-x"></i></button>
+                    <a href="#home" class="mobile-link hover:text-accent">Home</a>
+                    <a href="#about" class="mobile-link hover:text-accent">Tentang Kami</a>
+                    <a href="#tours" class="mobile-link hover:text-accent">Paket Wisata</a>
+                    <a href="#gallery" class="mobile-link hover:text-accent">Galeri</a>
+                    <a href="#contact" class="mobile-link hover:text-accent">Hubungi</a>
+                    <a href="#admin" class="mobile-link hover:text-accent bg-secondary/30 px-6 py-2 rounded-full">Dashboard Admin</a>
+                </div>
+                `;
+            },
+
+            Footer: () => `
+                <div class="container mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 border-b border-gray-800 pb-12">
+                    <div>
+                        <a href="#home" class="text-2xl font-bold tracking-tighter text-white flex items-center gap-2 mb-4">
+                            <i class="ph ph-compass text-accent text-3xl"></i>
+                            ${AppState.site.logo}
+                        </a>
+                        <p class="text-gray-400 text-sm mb-6">${AppState.site.aboutSnippet}</p>
+                        <div class="flex gap-4">
+                            <a href="${AppState.site.socials.instagram}" class="text-gray-400 hover:text-accent text-2xl transition"><i class="ph ph-instagram-logo"></i></a>
+                            <a href="${AppState.site.socials.facebook}" class="text-gray-400 hover:text-accent text-2xl transition"><i class="ph ph-facebook-logo"></i></a>
+                            <a href="${AppState.site.socials.youtube}" class="text-gray-400 hover:text-accent text-2xl transition"><i class="ph ph-youtube-logo"></i></a>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4 text-white">Menu Utama</h4>
+                        <ul class="space-y-2 text-gray-400">
+                            <li><a href="#about" class="hover:text-accent transition">Tentang Sibling Tours</a></li>
+                            <li><a href="#tours" class="hover:text-accent transition">Daftar Paket Tour</a></li>
+                            <li><a href="#gallery" class="hover:text-accent transition">Galeri Foto</a></li>
+                            <li><a href="#contact" class="hover:text-accent transition">Hubungi Kami</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4 text-white">Informasi Kontak</h4>
+                        <ul class="space-y-3 text-gray-400 text-sm">
+                            <li class="flex items-start gap-2"><i class="ph ph-map-pin text-accent text-lg shrink-0"></i> <span>${AppState.site.address}</span></li>
+                            <li class="flex items-center gap-2"><i class="ph ph-phone text-accent text-lg"></i> ${AppState.site.phone}</li>
+                            <li class="flex items-center gap-2"><i class="ph ph-envelope text-accent text-lg"></i> ${AppState.site.email}</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4 text-white">Admin Engine</h4>
+                        <p class="text-gray-400 text-sm mb-4">Butuh mengubah konten atau menambah paket tour? Masuk ke dasbor kontrol.</p>
+                        <a href="#admin" class="inline-flex items-center gap-2 bg-gray-800 border border-gray-700 hover:border-accent text-white px-5 py-3 rounded-xl font-medium w-full text-center justify-center transition-colors">
+                            <i class="ph ph-shield-check text-accent text-xl"></i> Akses Panel Administrator
+                        </a>
+                    </div>
+                </div>
+                <div class="container mx-auto px-6 py-6 flex flex-col md:flex-row justify-between items-center gap-4 text-gray-500 text-sm">
+                    <div>&copy; ${new Date().getFullYear()} ${AppState.site.name}. All rights reserved. Clean Client-Side CMS System.</div>
+                    <div class="flex gap-4">
+                        <button onclick="AppState.resetToDefault()" class="hover:text-red-400 transition flex items-center gap-1"><i class="ph ph-arrow-counter-clockwise"></i> Reset Factory Database</button>
+                    </div>
+                </div>
+            `,
+
+            TourCard: (tour) => `
+                <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group border border-gray-100 flex flex-col h-full">
+                    <div class="relative overflow-hidden aspect-[4/3] bg-gray-100">
+                        <img src="${tour.thumbnail}" alt="${tour.title}" onerror="this.src='https://placehold.co/600x450/0A4D68/FFF?text=Tour+Image'" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                        <div class="absolute top-4 left-4 bg-primary/90 text-white text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">
+                            ${tour.category}
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-bold text-dark group-hover:text-primary transition-colors line-clamp-2">${tour.title}</h3>
+                        </div>
+                        <div class="flex items-center gap-1 text-yellow-400 text-sm mb-4">
+                            <i class="ph-fill ph-star"></i>
+                            <span class="text-dark font-semibold ml-1">${tour.rating}</span>
+                            <span class="text-gray-400">(${tour.reviews} ulasan)</span>
+                        </div>
+                        <p class="text-gray-500 text-sm mb-6 line-clamp-2 flex-grow">${tour.description}</p>
+                        <div class="flex items-center justify-between border-t border-gray-100 pt-4 mt-auto">
+                            <div>
+                                <span class="text-[10px] text-gray-400 block uppercase tracking-wider">Mulai Dari</span>
+                                <span class="text-lg font-bold text-primary">${tour.price}</span>
+                            </div>
+                            <a href="#tour/${tour.id}" class="text-secondary hover:text-primary font-semibold flex items-center gap-1 group-hover:gap-2 transition-all">
+                                Detail <i class="ph ph-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `,
+
+            TestimonialCard: (review) => `
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full justify-between">
+                    <div>
+                        <div class="flex gap-1 text-accent mb-4 text-xl">
+                            ${Array(parseInt(review.rating) || 5).fill('<i class="ph-fill ph-star"></i>').join('')}
+                        </div>
+                        <p class="text-gray-600 italic mb-6">"${review.text}"</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xl uppercase shrink-0">
+                            ${review.name.charAt(0)}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-dark text-sm">${review.name}</h4>
+                            <p class="text-xs text-gray-400 uppercase tracking-wider">${review.country}</p>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        const Views = {
+            Home: () => `
+                <!-- Fullscreen Hero Section -->
+                <section class="relative h-screen flex items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 z-0">
+                        <img src="${AppState.hero.image}" alt="Hero Background" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-primary/40 mix-blend-multiply"></div>
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
+                    </div>
+                    <div class="relative z-10 text-center px-6 text-white max-w-4xl mx-auto animate-fade-in-up">
+                        <h1 class="text-4xl md:text-7xl font-extrabold mb-6 tracking-tight leading-tight">${AppState.hero.title}</h1>
+                        <p class="text-lg md:text-2xl mb-10 font-light text-gray-200 leading-relaxed">${AppState.hero.subtitle}</p>
+                        <a href="${AppState.hero.ctaLink}" class="inline-block bg-accent text-primary px-8 py-4 rounded-full text-lg font-bold hover:bg-white hover:scale-105 transition-all shadow-lg shadow-accent/20">
+                            ${AppState.hero.ctaText}
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Featured Tours -->
+                <section class="py-24 bg-light" id="tours">
+                    <div class="container mx-auto px-6">
+                        <div class="text-center mb-16 reveal">
+                            <span class="text-secondary font-bold tracking-widest uppercase text-sm mb-2 block">Premium Experience</span>
+                            <h2 class="text-3xl md:text-5xl font-bold text-primary">Paket Wisata Unggulan</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 reveal">
+                            ${AppState.tours.map(tour => Components.TourCard(tour)).join('')}
+                        </div>
+                        <div class="text-center mt-12 reveal">
+                            <a href="#tours" class="inline-flex items-center gap-2 border-2 border-primary text-primary px-8 py-3 rounded-full font-bold hover:bg-primary hover:text-white transition-colors">
+                                Lihat Semua Paket <i class="ph ph-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Why Choose Us & Stats -->
+                <section class="py-24 bg-primary text-white">
+                    <div class="container mx-auto px-6">
+                        <div class="grid md:grid-cols-2 gap-16 items-center">
+                            <div class="reveal">
+                                <h2 class="text-3xl md:text-5xl font-bold mb-6">Rasakan Liburan Tropis Kelas Atas</h2>
+                                <p class="text-gray-300 mb-8 leading-relaxed">${AppState.site.aboutSnippet}</p>
+                                <ul class="space-y-4 text-gray-200">
+                                    <li class="flex items-center gap-3"><i class="ph-fill ph-check-circle text-accent text-xl"></i> Armada Kapal Phinisi & Speedboat Milik Sendiri</li>
+                                    <li class="flex items-center gap-3"><i class="ph-fill ph-check-circle text-accent text-xl"></i> Pemandu Lokal Berlisensi & Sangat Berpengalaman</li>
+                                    <li class="flex items-center gap-3"><i class="ph-fill ph-check-circle text-accent text-xl"></i> Itinerary Fleksibel untuk Rombongan Privat</li>
+                                </ul>
+                            </div>
+                            <div class="grid grid-cols-2 gap-6 reveal">
+                                <div class="bg-white/10 backdrop-blur-md p-8 rounded-2xl border border-white/20 text-center">
+                                    <h3 class="text-4xl font-bold text-accent mb-2">5+ Th</h3>
+                                    <p class="text-xs uppercase tracking-wider text-gray-300 font-medium">Pengalaman</p>
+                                </div>
+                                <div class="bg-white/10 backdrop-blur-md p-8 rounded-2xl border border-white/20 text-center">
+                                    <h3 class="text-4xl font-bold text-accent mb-2">${AppState.tours.length * 10}+</h3>
+                                    <p class="text-xs uppercase tracking-wider text-gray-300 font-medium">Trip Sukses</p>
+                                </div>
+                                <div class="bg-white/10 backdrop-blur-md p-8 rounded-2xl border border-white/20 text-center">
+                                    <h3 class="text-4xl font-bold text-accent mb-2">${AppState.tours.length}</h3>
+                                    <p class="text-xs uppercase tracking-wider text-gray-300 font-medium">Paket Wisata</p>
+                                </div>
+                                <div class="bg-white/10 backdrop-blur-md p-8 rounded-2xl border border-white/20 text-center">
+                                    <h3 class="text-4xl font-bold text-accent mb-2">4.9</h3>
+                                    <p class="text-xs uppercase tracking-wider text-gray-300 font-medium">Ulasan Bintang</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Testimonials -->
+                <section class="py-24 bg-white">
+                    <div class="container mx-auto px-6">
+                        <div class="text-center mb-16 reveal">
+                            <span class="text-secondary font-bold tracking-widest uppercase text-sm mb-2 block">Testimoni</span>
+                            <h2 class="text-3xl font-bold text-primary">Apa Kata Mereka?</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 reveal">
+                            ${AppState.testimonials.map(review => Components.TestimonialCard(review)).join('')}
+                        </div>
+                    </div>
+                </section>
+            `,
+
+            Tours: () => `
+                <section class="pt-32 pb-16 bg-primary text-white text-center">
+                    <div class="container mx-auto px-6 animate-fade-in-up">
+                        <h1 class="text-4xl md:text-5xl font-bold mb-4">Pilihan Paket Wisata</h1>
+                        <p class="text-lg text-gray-300 max-w-2xl mx-auto font-light">Temukan petualangan tropis impian Anda yang dipandu secara profesional.</p>
+                    </div>
+                </section>
+                <section class="py-16 bg-light min-h-[50vh]">
+                    <div class="container mx-auto px-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            ${AppState.tours.map(tour => Components.TourCard(tour)).join('')}
+                        </div>
+                    </div>
+                </section>
+            `,
+
+            TourDetails: (id) => {
+                const tour = AppState.tours.find(t => t.id === id);
+                if (!tour) return Views.NotFound();
+
+                return `
+                    <section class="relative h-[60vh] flex items-end pb-16">
+                        <div class="absolute inset-0 z-0">
+                            <img src="${tour.thumbnail}" alt="${tour.title}" onerror="this.src='https://placehold.co/1200x600/0A4D68/FFF?text=Tour+Banner'" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+                        </div>
+                        <div class="container mx-auto px-6 relative z-10 text-white animate-fade-in-up">
+                            <div class="bg-accent text-primary text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wide inline-block mb-4">
+                                ${tour.category}
+                            </div>
+                            <h1 class="text-3xl md:text-5xl font-bold mb-4">${tour.title}</h1>
+                            <div class="flex flex-wrap gap-6 text-sm text-gray-200">
+                                <span class="flex items-center gap-2"><i class="ph ph-clock text-accent text-xl"></i> ${tour.duration}</span>
+                                <span class="flex items-center gap-2"><i class="ph ph-map-pin text-accent text-xl"></i> ${tour.location}</span>
+                                <span class="flex items-center gap-2"><i class="ph-fill ph-star text-accent text-xl"></i> ${tour.rating} (${tour.reviews} ulasan)</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="py-16 bg-white">
+                        <div class="container mx-auto px-6 flex flex-col lg:flex-row gap-12">
+                            <div class="w-full lg:w-2/3">
+                                <h3 class="text-2xl font-bold text-primary mb-6 border-b pb-2">Deskripsi Tur</h3>
+                                <p class="text-gray-600 mb-10 leading-relaxed text-lg">${tour.description}</p>
+                                
+                                <h3 class="text-2xl font-bold text-primary mb-6 border-b pb-2">Sorotan Utama (Highlights)</h3>
+                                <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+                                    ${tour.highlights.split(',').map(h => `
+                                        <li class="flex items-center gap-3 text-gray-700 bg-light p-4 rounded-xl border border-gray-100">
+                                            <i class="ph-fill ph-check-circle text-secondary text-xl shrink-0"></i> 
+                                            <span>${h.trim()}</span>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+
+                                <h3 class="text-2xl font-bold text-primary mb-6 border-b pb-2">Itinerary Perjalanan</h3>
+                                <div class="space-y-6 mb-10 pl-4 border-l-2 border-secondary">
+                                    ${tour.itinerary.split('|').map((item, i) => {
+                                        const parts = item.split(':');
+                                        const title = parts[0] || `Hari ${i+1}`;
+                                        const desc = parts[1] || '';
+                                        return `
+                                            <div class="relative pb-2">
+                                                <div class="absolute -left-[25px] top-1.5 w-3 h-3 bg-secondary rounded-full"></div>
+                                                <h4 class="text-lg font-bold text-dark mb-1">${title.trim()}</h4>
+                                                ${desc ? `<p class="text-gray-600 text-sm leading-relaxed">${desc.trim()}</p>` : ''}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                                    <div>
+                                        <h3 class="text-xl font-bold text-primary mb-4 flex items-center gap-2">
+                                            <i class="ph ph-plus-circle text-green-500"></i> Sudah Termasuk (Included)
+                                        </h3>
+                                        <ul class="space-y-2.5 text-gray-600 text-sm">
+                                            ${tour.included.split(',').map(i => `<li class="flex items-start gap-2"><i class="ph ph-check text-green-500 mt-1"></i> <span>${i.trim()}</span></li>`).join('')}
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-xl font-bold text-primary mb-4 flex items-center gap-2">
+                                            <i class="ph ph-minus-circle text-red-500"></i> Belum Termasuk (Excluded)
+                                        </h3>
+                                        <ul class="space-y-2.5 text-gray-600 text-sm">
+                                            ${tour.excluded.split(',').map(e => `<li class="flex items-start gap-2"><i class="ph ph-x text-red-500 mt-1"></i> <span>${e.trim()}</span></li>`).join('')}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="w-full lg:w-1/3">
+                                <div class="bg-light p-8 rounded-2xl border border-gray-200 sticky top-28 shadow-sm">
+                                    <div class="text-center mb-6 border-b border-gray-200 pb-6">
+                                        <span class="text-xs text-gray-400 uppercase tracking-wide font-medium">Harga Terbaik</span>
+                                        <div class="text-3xl font-bold text-primary my-2">${tour.price}</div>
+                                        <span class="text-xs text-gray-400">per pax / orang</span>
+                                    </div>
+                                    <a href="#booking/${tour.id}" class="block w-full bg-primary text-white text-center py-4 rounded-xl font-bold text-lg hover:bg-secondary transition-colors mb-4 shadow-lg shadow-primary/20">
+                                        Pesan Sekarang
+                                    </a>
+                                    
+                                    <div class="space-y-3">
+                                        <a href="https://wa.me/${AppState.site.whatsapp}?text=Halo Sibling Tours, saya ingin bertanya tentang paket: ${tour.title}." target="_blank" class="flex items-center justify-center gap-2 w-full border border-gray-300 text-dark py-3 rounded-xl font-medium hover:bg-gray-50 transition-colors">
+                                            <i class="ph-fill ph-whatsapp-logo text-green-500 text-xl"></i> Konsultasi via WhatsApp
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `;
+            },
+
+            Booking: (tourId) => {
+                const tour = AppState.tours.find(t => t.id === tourId);
+                return `
+                    <section class="pt-32 pb-16 bg-primary text-white text-center">
+                        <div class="container mx-auto px-6 animate-fade-in-up">
+                            <h1 class="text-4xl md:text-5xl font-bold mb-4">Formulir Booking Perjalanan</h1>
+                            <p class="text-lg text-gray-300 max-w-2xl mx-auto font-light">Lengkapi detail untuk mengamankan slot perjalanan premium Anda.</p>
+                        </div>
+                    </section>
+                    <section class="py-16 bg-light min-h-[50vh]">
+                        <div class="container mx-auto px-6 max-w-3xl">
+                            <div class="bg-white p-8 md:p-12 rounded-3xl shadow-lg border border-gray-100">
+                                <h2 class="text-2xl font-bold text-primary mb-8 border-b pb-4 flex items-center gap-2">
+                                    <i class="ph ph-notebook-fill"></i> Data Diri Pemesan
+                                </h2>
+                                <form id="booking-form" class="space-y-6" onsubmit="handleBookingFormSubmit(event)">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Lengkap *</label>
+                                            <input type="text" id="b-name" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-2">Alamat Email *</label>
+                                            <input type="email" id="b-email" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-2">Nomor WhatsApp *</label>
+                                            <input type="tel" id="b-phone" placeholder="Contoh: 0812345678" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-2">Asal / Kebangsaan *</label>
+                                            <input type="text" id="b-country" required placeholder="Indonesia, Malaysia, dll" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Paket Tour yang Dipilih *</label>
+                                        <select id="b-tour" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition bg-white">
+                                            ${AppState.tours.map(t => `<option value="${t.title}" data-price="${t.price}" ${t.id === tourId ? 'selected' : ''}>${t.title} (${t.price})</option>`).join('')}
+                                        </select>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Mulai Trip *</label>
+                                            <input type="date" id="b-date" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-2">Jumlah Tamu (Pax) *</label>
+                                            <input type="number" id="b-guests" min="1" value="2" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Permintaan Khusus / Catatan Tambahan</label>
+                                        <textarea id="b-notes" rows="4" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition" placeholder="Sebutkan alergi makanan, permintaan penjemputan bandara, atau perayaan ulang tahun/bulan madu..."></textarea>
+                                    </div>
+
+                                    <button type="submit" class="w-full bg-accent text-primary py-4 rounded-xl font-bold text-lg hover:bg-yellow-400 transition-colors shadow-lg flex items-center justify-center gap-2">
+                                        <i class="ph-fill ph-whatsapp-logo text-2xl"></i> Submit Booking & Kirim WhatsApp
+                                    </button>
+                                    <p class="text-xs text-gray-400 text-center mt-4">Penting: Data orderan Anda akan tersimpan di database admin website dan dialihkan ke WhatsApp operator kami untuk kalkulasi penawaran resmi.</p>
+                                </form>
+                            </div>
+                        </div>
+                    </section>
+                `;
+            },
+
+            Gallery: () => `
+                <section class="pt-32 pb-16 bg-white text-center">
+                    <div class="container mx-auto px-6 animate-fade-in-up">
+                        <h1 class="text-5xl font-bold mb-4 text-primary">Galeri Petualangan</h1>
+                        <p class="text-xl text-gray-600 max-w-2xl mx-auto font-light">Mengabadikan kilasan surga tropis di bumi Labuan Bajo & Komodo.</p>
+                    </div>
+                </section>
+                <section class="pb-24 bg-white">
+                    <div class="container mx-auto px-6">
+                        <div class="gallery-masonry reveal active">
+                            ${AppState.gallery.map(img => `
+                                <div class="gallery-item group relative overflow-hidden rounded-xl bg-gray-100">
+                                    <img src="${img.url}" alt="Foto Komodo Sibling Tours" onerror="this.src='https://placehold.co/600x400/0A4D68/FFF?text=Gallery+Photo'" class="w-full h-auto object-cover transform group-hover:scale-110 transition-transform duration-700" loading="lazy">
+                                    <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                        <span class="text-white bg-accent/90 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">${img.category}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </section>
+            `,
+
+            About: () => `
+                <section class="pt-32 pb-16 bg-primary text-white text-center">
+                    <div class="container mx-auto px-6 animate-fade-in-up">
+                        <h1 class="text-5xl font-bold mb-4">Tentang Sibling Tours</h1>
+                        <p class="text-xl text-gray-300 max-w-2xl mx-auto font-light">Merangkai mimpi petualangan tropis tak terlupakan.</p>
+                    </div>
+                </section>
+                <section class="py-20 bg-white">
+                    <div class="container mx-auto px-6 max-w-4xl text-center reveal active">
+                        <h2 class="text-3xl font-bold text-primary mb-6">Sejarah & Visi Kami</h2>
+                        <p class="text-lg text-gray-600 mb-6 leading-relaxed">Berawal dari kecintaan mendalam terhadap alam Nusa Tenggara Timur, khususnya Kepulauan Komodo, Sibling Tours didirikan dengan mimpi memperkenalkan keajaiban alam indonesia secara eksklusif. Kami merancang liburan kelas premium tanpa melupakan keramahan otentik khas Indonesia.</p>
+                    </div>
+                </section>
+                <section class="py-20 bg-light">
+                    <div class="container mx-auto px-6 text-center reveal active">
+                        <h2 class="text-3xl font-bold text-primary mb-12">Pandu Ekspedisi Profesional Kami</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+                            ${AppState.team.map(member => `
+                                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-shadow">
+                                    <img src="${member.image}" alt="${member.name}" onerror="this.src='https://placehold.co/150x150/0A4D68/FFF?text=Avatar'" class="w-32 h-32 rounded-full object-cover mx-auto mb-4 border-4 border-light">
+                                    <h3 class="text-xl font-bold text-dark">${member.name}</h3>
+                                    <p class="text-secondary font-medium text-sm">${member.role}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </section>
+            `,
+
+            Contact: () => `
+                <section class="pt-32 pb-16 bg-white text-center">
+                    <div class="container mx-auto px-6 animate-fade-in-up">
+                        <h1 class="text-5xl font-bold mb-4 text-primary">Hubungi Kami</h1>
+                        <p class="text-xl text-gray-600 max-w-2xl mx-auto font-light">Silakan kunjungi kantor kami atau hubungi via daring.</p>
+                    </div>
+                </section>
+                <section class="pb-24 bg-white">
+                    <div class="container mx-auto px-6 max-w-5xl">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 bg-light rounded-3xl overflow-hidden shadow-lg border border-gray-100 reveal active">
+                            <div class="p-10 md:p-12">
+                                <h2 class="text-3xl font-bold text-primary mb-8">Detail Kantor</h2>
+                                <div class="space-y-6">
+                                    <div class="flex items-start gap-4">
+                                        <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-secondary text-2xl shadow-sm shrink-0"><i class="ph ph-map-pin"></i></div>
+                                        <div>
+                                            <h4 class="font-bold text-dark mb-1">Alamat Kantor Pusat</h4>
+                                            <p class="text-gray-600 text-sm leading-relaxed">${AppState.site.address}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start gap-4">
+                                        <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-secondary text-2xl shadow-sm shrink-0"><i class="ph ph-phone"></i></div>
+                                        <div>
+                                            <h4 class="font-bold text-dark mb-1">Nomor Layanan HP</h4>
+                                            <p class="text-gray-600 text-sm">${AppState.site.phone}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start gap-4">
+                                        <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-secondary text-2xl shadow-sm shrink-0"><i class="ph ph-envelope"></i></div>
+                                        <div>
+                                            <h4 class="font-bold text-dark mb-1">Email</h4>
+                                            <p class="text-gray-600 text-sm">${AppState.site.email}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="h-[400px] md:h-auto bg-gray-200 relative">
+                                <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800');">
+                                    <div class="absolute inset-0 bg-primary/20 backdrop-blur-[2px]"></div>
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <div class="bg-white p-6 rounded-2xl shadow-2xl text-center max-w-xs mx-4">
+                                            <i class="ph-fill ph-map-pin text-4xl text-red-500 mb-2"></i>
+                                            <p class="font-bold text-primary">Sibling Tours Labuan Bajo Office</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- FAQs Accordion Section -->
+                <section class="py-24 bg-light" id="faq">
+                    <div class="container mx-auto px-6 max-w-3xl reveal active">
+                        <div class="text-center mb-12">
+                            <span class="text-secondary font-bold tracking-widest uppercase text-sm mb-2 block">FAQ</span>
+                            <h2 class="text-3xl md:text-4xl font-bold text-primary">Pertanyaan yang Sering Diajukan</h2>
+                        </div>
+                        <div class="space-y-4">
+                            ${AppState.faq.map((item, i) => `
+                                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-300">
+                                    <button class="w-full text-left px-6 py-5 font-bold text-dark flex justify-between items-center focus:outline-none" onclick="toggleFaq(${i})">
+                                        <span class="pr-4">${item.q}</span>
+                                        <i class="ph ph-caret-down transform transition-transform text-secondary text-xl shrink-0" id="faq-icon-${i}"></i>
+                                    </button>
+                                    <div class="px-6 pb-6 text-gray-500 text-sm leading-relaxed hidden" id="faq-content-${i}">
+                                        ${item.a}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </section>
+            `,
+
+            NotFound: () => `
+                <section class="h-screen flex flex-col items-center justify-center bg-white text-center px-6">
+                    <h1 class="text-9xl font-black text-gray-200 mb-4">404</h1>
+                    <h2 class="text-3xl font-bold text-primary mb-6">Halaman Tidak Ditemukan</h2>
+                    <p class="text-gray-500 mb-8 max-w-md">Tautan rusak atau sedang dalam perbaikan oleh tim IT.</p>
+                    <a href="#home" class="bg-accent text-primary px-8 py-3 rounded-full font-bold hover:bg-yellow-400 transition-colors">Kembali ke Beranda</a>
+                </section>
+            `
+        };
+
+        const AdminView = {
+            Login: () => `
+                <section class="pt-32 pb-24 bg-primary text-white min-h-screen flex items-center justify-center">
+                    <div class="bg-white text-dark p-8 md:p-12 rounded-3xl shadow-2xl max-w-md w-full mx-4 border border-gray-100 animate-zoom-in">
+                        <div class="text-center mb-8">
+                            <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary text-3xl mx-auto mb-4">
+                                <i class="ph ph-lock-key"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-primary">Login Administrator</h2>
+                            <p class="text-xs text-gray-400 mt-1">Gunakan kredensial default untuk mengakses database internal.</p>
+                        </div>
+                        <form onsubmit="handleAdminLogin(event)" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Username</label>
+                                <input type="text" id="a-user" value="admin" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                                <input type="password" id="a-pass" value="admin123" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                            </div>
+                            <button type="submit" class="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg hover:bg-secondary transition-colors shadow-lg">
+                                Autentikasi Masuk
+                            </button>
+                        </form>
+                    </div>
+                </section>
+            `,
+
+            Dashboard: (activeTab = 'tours') => {
+                if (!AppState.isAdminAuthenticated) return AdminView.Login();
+
+                return `
+                    <section class="pt-28 pb-24 bg-light min-h-screen">
+                        <div class="container mx-auto px-4 md:px-6">
+                            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8 border-b pb-6">
+                                <div>
+                                    <h1 class="text-3xl font-extrabold text-primary flex items-center gap-2">
+                                        <i class="ph ph-shield-check"></i> Sibling Tours CMS Engine
+                                    </h1>
+                                    <p class="text-sm text-gray-500">Ubah, tambah, atau hapus database konten secara real-time seperti PHP.</p>
+                                </div>
+                                <div class="flex gap-3">
+                                    <button onclick="handleAdminLogout()" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition">
+                                        <i class="ph ph-sign-out"></i> Keluar Sistem
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                                <!-- Sidebar Kontrol / Tab -->
+                                <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-2 h-fit">
+                                    <button onclick="renderAdminTab('tours')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-3 transition ${activeTab === 'tours' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-light'}">
+                                        <i class="ph ph-package text-lg"></i> Kelola Paket Wisata
+                                    </button>
+                                    <button onclick="renderAdminTab('bookings')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-3 transition ${activeTab === 'bookings' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-light'}">
+                                        <i class="ph ph-notebook text-lg"></i> Booking Masuk (${AppState.bookings.length})
+                                    </button>
+                                    <button onclick="renderAdminTab('site')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-3 transition ${activeTab === 'site' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-light'}">
+                                        <i class="ph ph-gear text-lg"></i> Pengaturan Web
+                                    </button>
+                                    <button onclick="renderAdminTab('faq')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-3 transition ${activeTab === 'faq' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-light'}">
+                                        <i class="ph ph-question text-lg"></i> Kelola FAQ
+                                    </button>
+                                    <button onclick="renderAdminTab('export')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-3 transition ${activeTab === 'export' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-light'}">
+                                        <i class="ph ph-download-simple text-lg"></i> Ekspor Database (JSON)
+                                    </button>
+                                </div>
+
+                                <!-- Konten Editor Utama -->
+                                <div class="lg:col-span-3 bg-white p-6 md:p-8 rounded-2xl border border-gray-200 shadow-sm">
+                                    ${AdminView.RenderTabContent(activeTab)}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                `;
+            },
+
+            RenderTabContent(tab) {
+                switch (tab) {
+                    case 'tours': return AdminView.ToursTab();
+                    case 'bookings': return AdminView.BookingsTab();
+                    case 'site': return AdminView.SiteTab();
+                    case 'faq': return AdminView.FaqTab();
+                    case 'export': return AdminView.ExportTab();
+                }
+            },
+
+            ToursTab: () => `
+                <div class="flex justify-between items-center border-b pb-4 mb-6">
+                    <h3 class="text-xl font-bold text-primary">Daftar Paket Tour</h3>
+                    <button onclick="openTourModal()" class="bg-secondary hover:bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition">
+                        <i class="ph ph-plus-bold"></i> Tambah Tour Baru
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3">Thumbnail</th>
+                                <th class="px-4 py-3">Judul Paket</th>
+                                <th class="px-4 py-3">Kategori</th>
+                                <th class="px-4 py-3">Harga</th>
+                                <th class="px-4 py-3">Durasi</th>
+                                <th class="px-4 py-3 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            ${AppState.tours.map(tour => `
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="px-4 py-3">
+                                        <img src="${tour.thumbnail}" alt="" onerror="this.src='https://placehold.co/60x40/0A4D68/FFF?text=Img'" class="w-12 h-8 object-cover rounded-md">
+                                    </td>
+                                    <td class="px-4 py-3 font-bold text-dark">${tour.title}</td>
+                                    <td class="px-4 py-3"><span class="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full">${tour.category}</span></td>
+                                    <td class="px-4 py-3 text-secondary font-bold">${tour.price}</td>
+                                    <td class="px-4 py-3 text-xs">${tour.duration}</td>
+                                    <td class="px-4 py-3 text-right space-x-1.5">
+                                        <button onclick="openTourModal('${tour.id}')" class="text-secondary hover:text-primary font-bold text-xs"><i class="ph ph-pencil-simple text-lg"></i></button>
+                                        <button onclick="deleteTour('${tour.id}')" class="text-red-500 hover:text-red-700 font-bold text-xs"><i class="ph ph-trash text-lg"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Form Modal Kustom Tambah/Edit Tour (Disembunyikan secara default) -->
+                <div id="tour-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+                    <div class="bg-white rounded-3xl max-w-3xl w-full h-[85vh] flex flex-col shadow-2xl animate-zoom-in">
+                        <div class="p-6 border-b flex justify-between items-center">
+                            <h3 id="modal-title" class="text-lg font-bold text-primary">Input Data Paket Tour</h3>
+                            <button onclick="closeTourModal()" class="text-gray-400 hover:text-dark text-2xl"><i class="ph ph-x"></i></button>
+                        </div>
+                        <div class="p-6 overflow-y-auto space-y-6 flex-grow">
+                            <form id="tour-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <input type="hidden" id="m-tour-id">
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Judul Paket Tour *</label>
+                                    <input type="text" id="m-title" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-secondary focus:border-secondary outline-none transition text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Slug URL Unik *</label>
+                                    <input type="text" id="m-slug" placeholder="premium-komodo-3d2n" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-secondary focus:border-secondary outline-none transition text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Harga Tiket Paket *</label>
+                                    <input type="text" id="m-price" placeholder="Rp 5.000.000" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-secondary focus:border-secondary outline-none transition text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Durasi *</label>
+                                    <input type="text" id="m-duration" placeholder="3 Hari / 2 Malam" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-secondary focus:border-secondary outline-none transition text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Kategori Perahu / Resor *</label>
+                                    <select id="m-category" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-secondary" bg-white>
+                                        <option value="Liveaboard">Liveaboard</option>
+                                        <option value="Speedboat">Speedboat</option>
+                                        <option value="Resort">Resort</option>
+                                        <option value="Culture">Culture</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Lokasi Base *</label>
+                                    <input type="text" id="m-location" value="Taman Nasional Komodo" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-secondary text-sm">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">URL Gambar Utama *</label>
+                                    <input type="url" id="m-thumbnail" placeholder="https://..." required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-secondary text-sm">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Deskripsi Singkat *</label>
+                                    <textarea id="m-description" rows="3" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-secondary text-sm"></textarea>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Sorotan (Pisahkan dengan tanda koma) *</label>
+                                    <input type="text" id="m-highlights" placeholder="Padar Island Sunrise, Pink Beach, Manta Point" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-1 focus:ring-secondary text-sm">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Termasuk (Included - pisahkan dengan tanda koma)</label>
+                                    <input type="text" id="m-included" placeholder="Makan 3x sehari, Alat snorkeling, Guide" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Belum Termasuk (Excluded - pisahkan dengan tanda koma)</label>
+                                    <input type="text" id="m-excluded" placeholder="Tiket pesawat PP, Keperluan pribadi" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Format Itinerary Perjalanan (Pemisah Hari pakai pipa | , pemisah Judul pakai titik dua : ) *</label>
+                                    <textarea id="m-itinerary" rows="4" placeholder="Hari 1: Penjemputan di bandara dan berlayar ke Kelor | Hari 2: Menikmati sunrise di Padar" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm"></textarea>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="p-6 border-t bg-gray-50 flex justify-end gap-3 rounded-b-3xl">
+                            <button onclick="closeTourModal()" class="bg-gray-200 text-dark px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-300 transition">Batalkan</button>
+                            <button onclick="saveTourData()" class="bg-primary text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-secondary transition">Simpan ke Database</button>
+                        </div>
+                    </div>
+                </div>
+            `,
+
+            BookingsTab: () => `
+                <div class="border-b pb-4 mb-6">
+                    <h3 class="text-xl font-bold text-primary">Daftar Reservasi & Booking Tamu</h3>
+                    <p class="text-xs text-gray-400 mt-1">Orderan ini tersimpan langsung secara otomatis sesaat sebelum tamu diarahkan ke WhatsApp.</p>
+                </div>
+
+                <div class="overflow-x-auto">
+                    ${AppState.bookings.length === 0 ? `
+                        <div class="text-center py-12 text-gray-400">
+                            <i class="ph ph-folder-simple-dashed text-5xl mb-3 block"></i>
+                            <p class="font-medium text-sm">Belum ada booking masuk di database Anda.</p>
+                        </div>
+                    ` : `
+                        <table class="w-full text-left text-xs text-gray-500">
+                            <thead class="text-[10px] text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3">ID Trip</th>
+                                    <th class="px-4 py-3">Nama Tamu</th>
+                                    <th class="px-4 py-3">WhatsApp / Email</th>
+                                    <th class="px-4 py-3">Paket Tour</th>
+                                    <th class="px-4 py-3">Tanggal Trip</th>
+                                    <th class="px-4 py-3">Status</th>
+                                    <th class="px-4 py-3 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                ${AppState.bookings.map(book => `
+                                    <tr class="hover:bg-gray-50/50">
+                                        <td class="px-4 py-3 font-mono font-semibold text-gray-400">#${book.id}</td>
+                                        <td class="px-4 py-3 font-bold text-dark">${book.name} <span class="block text-[10px] text-gray-400 font-normal">${book.country}</span></td>
+                                        <td class="px-4 py-3">
+                                            <a href="https://wa.me/${book.phone.replace(/[^0-9]/g, '')}" target="_blank" class="text-green-600 hover:underline flex items-center gap-1"><i class="ph ph-whatsapp-logo"></i> ${book.phone}</a>
+                                            <span class="block text-[10px] text-gray-400 font-normal">${book.email}</span>
+                                        </td>
+                                        <td class="px-4 py-3 font-medium text-dark">${book.tour} <span class="block text-[10px] text-gray-400 font-normal">${book.guests} Pax</span></td>
+                                        <td class="px-4 py-3 text-dark font-medium">${book.date}</td>
+                                        <td class="px-4 py-3">
+                                            <select onchange="updateBookingStatus('${book.id}', this.value)" class="bg-light border border-gray-200 text-[10px] rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary">
+                                                <option value="Pending" ${book.status === 'Pending' ? 'selected' : ''}>? Pending</option>
+                                                <option value="Confirmed" ${book.status === 'Confirmed' ? 'selected' : ''}>? Confirmed</option>
+                                                <option value="Cancelled" ${book.status === 'Cancelled' ? 'selected' : ''}>? Cancelled</option>
+                                            </select>
+                                        </td>
+                                        <td class="px-4 py-3 text-right">
+                                            <button onclick="deleteBooking('${book.id}')" class="text-red-500 hover:text-red-700"><i class="ph ph-trash text-lg"></i></button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `}
+                </div>
+            `,
+
+            SiteTab: () => `
+                <div class="border-b pb-4 mb-6">
+                    <h3 class="text-xl font-bold text-primary">Pengaturan Informasi Website</h3>
+                    <p class="text-xs text-gray-400 mt-1">Ganti teks logo, nomor CS WhatsApp, hingga email dengan form di bawah ini.</p>
+                </div>
+
+                <form id="site-settings-form" onsubmit="saveSiteSettings(event)" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Nama Perusahaan / Logo *</label>
+                            <input type="text" id="s-logo" value="${AppState.site.logo}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Tagline Promosi *</label>
+                            <input type="text" id="s-tagline" value="${AppState.site.tagline}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Email Resmi Layanan *</label>
+                            <input type="email" id="s-email" value="${AppState.site.email}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">WhatsApp CS (Format Kode Negara Tanpa '+') *</label>
+                            <input type="text" id="s-whatsapp" value="${AppState.site.whatsapp}" required placeholder="Contoh: 62812345678" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Nomor Kontak Tampilan *</label>
+                            <input type="text" id="s-phone" value="${AppState.site.phone}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Tautan Instagram</label>
+                            <input type="url" id="s-instagram" value="${AppState.site.socials.instagram}" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Alamat Fisik Kantor *</label>
+                        <input type="text" id="s-address" value="${AppState.site.address}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Ringkasan Deskripsi Perusahaan *</label>
+                        <textarea id="s-about" rows="3" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">${AppState.site.aboutSnippet}</textarea>
+                    </div>
+                    <button type="submit" class="bg-primary hover:bg-secondary text-white px-6 py-3 rounded-xl text-xs font-bold transition">
+                        Simpan Semua Pengaturan
+                    </button>
+                </form>
+            `,
+
+            FaqTab: () => `
+                <div class="flex justify-between items-center border-b pb-4 mb-6">
+                    <h3 class="text-xl font-bold text-primary">Kelola Daftar FAQ</h3>
+                    <button onclick="addFaqRow()" class="bg-secondary hover:bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold transition">
+                        Tambah FAQ Baru
+                    </button>
+                </div>
+
+                <form id="faq-form" onsubmit="saveFaqData(event)" class="space-y-6">
+                    <div id="faq-rows" class="space-y-4">
+                        ${AppState.faq.map((item, i) => `
+                            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 relative group">
+                                <button type="button" onclick="this.parentElement.remove()" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-600 transition shadow text-xs"><i class="ph ph-trash"></i></button>
+                                <div class="space-y-3">
+                                    <input type="text" placeholder="Pertanyaan (Question)" value="${item.q}" required class="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs font-semibold">
+                                    <textarea placeholder="Jawaban (Answer)" rows="2" required class="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs text-gray-600">${item.a}</textarea>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button type="submit" class="bg-primary hover:bg-secondary text-white px-6 py-3 rounded-xl text-xs font-bold transition">
+                        Simpan Perubahan FAQ
+                    </button>
+                </form>
+            `,
+
+            ExportTab: () => {
+                // Generate format script lengkap
+                const dbJson = JSON.stringify({
+                    site: AppState.site,
+                    hero: AppState.hero,
+                    tours: AppState.tours,
+                    faq: AppState.faq
+                }, null, 4);
+
+                return `
+                    <div class="border-b pb-4 mb-6">
+                        <h3 class="text-xl font-bold text-primary">Ekspor Database Konten</h3>
+                        <p class="text-xs text-gray-400 mt-1">Anda dapat mendownload seluruh database buatan Anda untuk dijadikan file cadangan atau dimasukkan kembali ke file server.</p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <p class="text-sm text-gray-600 leading-relaxed">Website ini dirancang secara modern dengan arsitektur masa depan. Seluruh perubahan input data di atas telah tersimpan secara instan di LocalStorage komputer Anda. Jika Anda ingin menyematkannya secara permanen, cukup salin data JSON di bawah ini.</p>
+                        
+                        <div class="relative">
+                            <textarea id="db-copy-box" readonly rows="12" class="w-full p-4 font-mono text-xs bg-gray-900 text-green-400 rounded-2xl border-none focus:ring-0 select-all">${dbJson}</textarea>
+                            <button onclick="copyToClipboard()" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 text-white border border-white/20 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                                <i class="ph ph-copy"></i> Salin Data
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+
+        const App = {
+            root: document.getElementById('app-root'),
+            header: document.getElementById('header-container'),
+            footer: document.getElementById('footer-container'),
+            loader: document.getElementById('loader'),
+
+            init() {
+                this.header.innerHTML = Components.Header();
+                this.footer.innerHTML = Components.Footer();
+                
+                // Atur link tombol Whatsapp floating
+                document.getElementById('floating-wa').href = `https://wa.me/${AppState.site.whatsapp}?text=Halo Sibling Tours, saya ingin menanyakan tentang paket tour premium ke Labuan Bajo.`;
+
+                // Event Listeners
+                window.addEventListener('hashchange', () => this.handleRoute());
+                window.addEventListener('scroll', this.handleScroll);
+                this.setupMobileMenu();
+
+                this.handleRoute();
+
+                // Matikan loader perlahan
+                setTimeout(() => {
+                    this.loader.style.opacity = '0';
+                    setTimeout(() => this.loader.style.display = 'none', 500);
+                }, 800);
+            },
+
+            handleRoute() {
+                const hash = window.location.hash.slice(1) || 'home';
+                const parts = hash.split('/');
+                const route = parts[0];
+                const param = parts[1];
+
+                window.scrollTo({ top: 0, behavior: 'auto' });
+
+                // Ubah style header
+                if (route === 'home') {
+                    this.header.classList.add('header-transparent');
+                    this.header.classList.remove('header-scrolled', 'bg-white', 'text-primary', 'shadow-md');
+                } else {
+                    this.header.classList.remove('header-transparent');
+                    this.header.classList.add('bg-white', 'text-primary', 'shadow-md');
+                }
+
+                // Tutup menu mobile jika terbuka
+                document.getElementById('mobile-menu').classList.add('translate-x-full');
+
+                let html = '';
+                switch (route) {
+                    case 'home': html = Views.Home(); break;
+                    case 'tours': html = Views.Tours(); break;
+                    case 'tour': html = Views.TourDetails(param); break;
+                    case 'booking': html = Views.Booking(param); break;
+                    case 'gallery': html = Views.Gallery(); break;
+                    case 'about': html = Views.About(); break;
+                    case 'contact': html = Views.Contact(); break;
+                    
+                    // Route Admin CMS
+                    case 'admin': 
+                        html = AppState.isAdminAuthenticated ? AdminView.Dashboard() : AdminView.Login(); 
+                        break;
+                        
+                    default: html = Views.NotFound(); break;
+                }
+
+                this.root.innerHTML = html;
+                
+                // Re-render Header untuk sinkronisasi tombol status admin
+                this.header.innerHTML = Components.Header();
+                this.setupMobileMenu();
+                
+                // Inisialisasi animasi scroll
+                setTimeout(() => this.initScrollAnimations(), 100);
+            },
+
+            handleScroll() {
+                const header = document.getElementById('header-container');
+                const isHome = window.location.hash === '' || window.location.hash === '#home';
+                
+                if (isHome) {
+                    if (window.scrollY > 50) {
+                        header.classList.add('header-scrolled');
+                        header.classList.remove('header-transparent');
+                    } else {
+                        header.classList.remove('header-scrolled');
+                        header.classList.add('header-transparent');
+                    }
+                }
+            },
+
+            setupMobileMenu() {
+                const btn = document.getElementById('mobile-menu-btn');
+                const closeBtn = document.getElementById('close-menu-btn');
+                const menu = document.getElementById('mobile-menu');
+                
+                if (btn && closeBtn && menu) {
+                    btn.addEventListener('click', () => menu.classList.remove('translate-x-full'));
+                    closeBtn.addEventListener('click', () => menu.classList.add('translate-x-full'));
+                }
+            },
+
+            initScrollAnimations() {
+                const reveals = document.querySelectorAll('.reveal');
+                if(!reveals.length) return;
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('active');
+                        }
+                    });
+                }, { threshold: 0.1 });
+
+                reveals.forEach(el => observer.observe(el));
+            }
+        };
+
+        
+        // Custom Toast Notification Maker
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const bgClass = type === 'success' ? 'bg-emerald-500' : 'bg-red-500';
+            const iconClass = type === 'success' ? 'ph-check-circle' : 'ph-warning';
+            
+            const toast = document.createElement('div');
+            toast.className = `${bgClass} text-white px-5 py-4 rounded-2xl shadow-xl flex items-center gap-3 animate-fade-in-up max-w-sm pointer-events-auto`;
+            toast.innerHTML = `
+                <i class="ph ${iconClass} text-2xl shrink-0"></i>
+                <div class="text-sm font-semibold">${message}</div>
+            `;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, 3000);
+        }
+
+        // Accordion FAQ Toggle
+        window.toggleFaq = (index) => {
+            const content = document.getElementById(`faq-content-${index}`);
+            const icon = document.getElementById(`faq-icon-${index}`);
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.classList.add('rotate-180');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.remove('rotate-180');
+            }
+        };
+
+        // Submit Form Booking & Persist Data
+        window.handleBookingFormSubmit = (event) => {
+            event.preventDefault();
+            
+            const name = document.getElementById('b-name').value;
+            const email = document.getElementById('b-email').value;
+            const phone = document.getElementById('b-phone').value;
+            const country = document.getElementById('b-country').value;
+            const tour = document.getElementById('b-tour').value;
+            const date = document.getElementById('b-date').value;
+            const guests = document.getElementById('b-guests').value;
+            const notes = document.getElementById('b-notes').value || 'Tidak ada';
+
+            // 1. Simpan Data ke State Database (Mirip Insert Query PHP)
+            const newBooking = {
+                id: crypto.randomUUID().slice(0, 8),
+                name, email, phone, country, tour, date, guests, notes,
+                status: 'Pending'
+            };
+            
+            AppState.bookings.push(newBooking);
+            AppState.save();
+
+            // 2. Tampilkan Toast Sukses
+            showToast('Reservasi Anda berhasil disimpan di database!', 'success');
+
+            // 3. Alihkan Pengunjung ke WhatsApp Otomatis
+            setTimeout(() => {
+                const message = `*Konfirmasi Pemesanan Sibling Tours*%0A%0A*ID Pemesanan:* #${newBooking.id}%0A*Nama:* ${name}%0A*Email:* ${email}%0A*WhatsApp:* ${phone}%0A*Kebangsaan:* ${country}%0A*Paket:* ${tour}%0A*Tanggal Mulai:* ${date}%0A*Pax:* ${guests} Orang%0A*Catatan:* ${notes}`;
+                const waUrl = `https://wa.me/${AppState.site.whatsapp}?text=${message}`;
+                window.open(waUrl, '_blank');
+                
+                // Redirect kembali ke halaman beranda
+                window.location.hash = '#home';
+            }, 1500);
+        };
+
+        // login Administrator
+        window.handleAdminLogin = (event) => {
+            event.preventDefault();
+            const user = document.getElementById('a-user').value;
+            const pass = document.getElementById('a-pass').value;
+
+            if (user === 'admin' && pass === 'admin123') {
+                AppState.isAdminAuthenticated = true;
+                sessionStorage.setItem('ST_ADMIN_AUTH', 'true');
+                showToast('Login berhasil! Selamat datang kembali Admin.', 'success');
+                window.location.hash = '#admin';
+            } else {
+                showToast('Kredensial salah! Silakan coba lagi.', 'error');
+            }
+        };
+
+        window.handleAdminLogout = () => {
+            AppState.isAdminAuthenticated = false;
+            sessionStorage.removeItem('ST_ADMIN_AUTH');
+            showToast('Anda berhasil keluar dari sistem CMS.', 'success');
+            window.location.hash = '#home';
+        };
+
+        window.renderAdminTab = (tab) => {
+            AppState.init(); // Muat data segar
+            const container = document.getElementById('app-root');
+            container.innerHTML = AdminView.Dashboard(tab);
+        };
+
+
+        // FAQ CRUD
+        window.addFaqRow = () => {
+            const rows = document.getElementById('faq-rows');
+            const newDiv = document.createElement('div');
+            newDiv.className = 'bg-gray-50 p-4 rounded-xl border border-gray-200 relative group';
+            newDiv.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove()" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-600 transition shadow text-xs"><i class="ph ph-trash"></i></button>
+                <div class="space-y-3">
+                    <input type="text" placeholder="Pertanyaan (Question)" required class="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs font-semibold">
+                    <textarea placeholder="Jawaban (Answer)" rows="2" required class="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs text-gray-600"></textarea>
+                </div>
+            `;
+            rows.appendChild(newDiv);
+        };
+
+        window.saveFaqData = (event) => {
+            event.preventDefault();
+            const rows = document.querySelectorAll('#faq-rows > div');
+            const newFaqs = [];
+            
+            rows.forEach(row => {
+                const q = row.querySelector('input').value;
+                const a = row.querySelector('textarea').value;
+                if (q && a) {
+                    newFaqs.push({ q, a });
+                }
+            });
+
+            AppState.faq = newFaqs;
+            AppState.save();
+            showToast('Daftar FAQ berhasil diperbarui!', 'success');
+            window.renderAdminTab('faq');
+        };
+
+        // Site Settings Editor
+        window.saveSiteSettings = (event) => {
+            event.preventDefault();
+            
+            AppState.site.logo = document.getElementById('s-logo').value;
+            AppState.site.tagline = document.getElementById('s-tagline').value;
+            AppState.site.email = document.getElementById('s-email').value;
+            AppState.site.whatsapp = document.getElementById('s-whatsapp').value;
+            AppState.site.phone = document.getElementById('s-phone').value;
+            AppState.site.address = document.getElementById('s-address').value;
+            AppState.site.aboutSnippet = document.getElementById('s-about').value;
+            AppState.site.socials.instagram = document.getElementById('s-instagram').value;
+
+            AppState.save();
+            showToast('Pengaturan website berhasil disimpan!', 'success');
+            window.renderAdminTab('site');
+        };
+
+        // Booking status update
+        window.updateBookingStatus = (id, newStatus) => {
+            const booking = AppState.bookings.find(b => b.id === id);
+            if (booking) {
+                booking.status = newStatus;
+                AppState.save();
+                showToast(`Status booking #${id} diubah menjadi: ${newStatus}`, 'success');
+            }
+        };
+
+        window.deleteBooking = (id) => {
+            if (confirm('Hapus booking ini dari database?')) {
+                AppState.bookings = AppState.bookings.filter(b => b.id !== id);
+                AppState.save();
+                showToast('Booking berhasil dihapus.', 'success');
+                window.renderAdminTab('bookings');
+            }
+        };
+
+        // Tour Packages CRUD Modal and actions
+        window.openTourModal = (id = '') => {
+            const modal = document.getElementById('tour-modal');
+            const titleEl = document.getElementById('modal-title');
+            const form = document.getElementById('tour-form');
+            form.reset();
+
+            if (id) {
+                // Mode Edit
+                const tour = AppState.tours.find(t => t.id === id);
+                if (tour) {
+                    titleEl.innerText = "Edit Detail Paket Tour";
+                    document.getElementById('m-tour-id').value = tour.id;
+                    document.getElementById('m-title').value = tour.title;
+                    document.getElementById('m-slug').value = tour.slug;
+                    document.getElementById('m-price').value = tour.price;
+                    document.getElementById('m-duration').value = tour.duration;
+                    document.getElementById('m-category').value = tour.category;
+                    document.getElementById('m-location').value = tour.location;
+                    document.getElementById('m-thumbnail').value = tour.thumbnail;
+                    document.getElementById('m-description').value = tour.description;
+                    document.getElementById('m-highlights').value = tour.highlights;
+                    document.getElementById('m-included').value = tour.included;
+                    document.getElementById('m-excluded').value = tour.excluded;
+                    document.getElementById('m-itinerary').value = tour.itinerary;
+                }
+            } else {
+                // Mode Tambah Baru
+                titleEl.innerText = "Tambah Paket Tour Baru";
+                document.getElementById('m-tour-id').value = '';
+            }
+
+            modal.classList.remove('hidden');
+        };
+
+        window.closeTourModal = () => {
+            document.getElementById('tour-modal').classList.add('hidden');
+        };
+
+        window.saveTourData = () => {
+            const form = document.getElementById('tour-form');
+            if(!form.checkValidity()) {
+                showToast('Harap lengkapi semua bidang isian wajib bintang (*)!', 'error');
+                return;
+            }
+
+            const id = document.getElementById('m-tour-id').value;
+            const newTour = {
+                id: id || 't' + (AppState.tours.length + 1),
+                title: document.getElementById('m-title').value,
+                slug: document.getElementById('m-slug').value,
+                price: document.getElementById('m-price').value,
+                duration: document.getElementById('m-duration').value,
+                category: document.getElementById('m-category').value,
+                location: document.getElementById('m-location').value,
+                thumbnail: document.getElementById('m-thumbnail').value,
+                description: document.getElementById('m-description').value,
+                highlights: document.getElementById('m-highlights').value,
+                included: document.getElementById('m-included').value,
+                excluded: document.getElementById('m-excluded').value,
+                itinerary: document.getElementById('m-itinerary').value,
+                rating: 5.0,
+                reviews: 0,
+                availability: true
+            };
+
+            if (id) {
+                // Edit Data yang sudah ada (Update Query)
+                const index = AppState.tours.findIndex(t => t.id === id);
+                if (index !== -1) {
+                    newTour.rating = AppState.tours[index].rating;
+                    newTour.reviews = AppState.tours[index].reviews;
+                    AppState.tours[index] = newTour;
+                }
+            } else {
+                // Tambah baru (Insert Query)
+                AppState.tours.push(newTour);
+            }
+
+            AppState.save();
+            closeTourModal();
+            showToast('Paket tour berhasil disimpan di database!', 'success');
+            window.renderAdminTab('tours');
+        };
+
+        window.deleteTour = (id) => {
+            if (confirm('Apakah Anda yakin ingin menghapus paket tour ini secara permanen dari database?')) {
+                AppState.tours = AppState.tours.filter(t => t.id !== id);
+                AppState.save();
+                showToast('Paket tour berhasil dihapus!', 'success');
+                window.renderAdminTab('tours');
+            }
+        };
+
+        // Copy JSON Database clipboard helper
+        window.copyToClipboard = () => {
+            const box = document.getElementById('db-copy-box');
+            box.select();
+            document.execCommand('copy');
+            showToast('Seluruh data JSON disalin ke papan klip!', 'success');
+        };
+
+        // Boot the App
+        document.addEventListener('DOMContentLoaded', () => {
+            App.init();
+        });
+
+    </script>
+</body>
+</html>
