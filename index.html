@@ -275,8 +275,8 @@
         ];
 
         // KREDENSIAL SUPABASE (Masukkan API Keys Proyek Anda di Sini)
-        const SUPABASE_URL = "https://fbveofdacvnkvrxbvzds.supabase.co/rest/v1/"; 
-        const SUPABASE_KEY = "sb_publishable_tZ64j2LZm5olA-olkNLd-g_RKrc74ls"; 
+        const SUPABASE_URL = ""; 
+        const SUPABASE_KEY = ""; 
 
         // Menggunakan 'supabaseClient' untuk menghindari collision dengan global identifier library 'supabase'
         let supabaseClient = null;
@@ -352,9 +352,13 @@
             team: [],
             bookings: [],
             isAdminAuthenticated: false,
+            adminUsername: 'admin',
+            adminPassword: 'admin123',
 
             async init() {
                 this.isAdminAuthenticated = sessionStorage.getItem('ST_ADMIN_AUTH') === 'true';
+                this.adminUsername = localStorage.getItem('ST_ADMIN_USER') || 'admin';
+                this.adminPassword = localStorage.getItem('ST_ADMIN_PASS') || 'admin123';
 
                 if (useSupabase && supabaseClient) {
                     try {
@@ -376,6 +380,11 @@
                                 },
                                 aboutSnippet: siteData.about_snippet || DEFAULT_SITE.aboutSnippet
                             };
+                            
+                            // Ambil kredensial admin jika kolom tersedia di Supabase
+                            if (siteData.admin_username) this.adminUsername = siteData.admin_username;
+                            if (siteData.admin_password) this.adminPassword = siteData.admin_password;
+
                         } else {
                             this.site = DEFAULT_SITE;
                         }
@@ -424,6 +433,8 @@
                 this.tours = JSON.parse(localStorage.getItem('ST_TOURS')) || DEFAULT_TOURS;
                 this.faq = JSON.parse(localStorage.getItem('ST_FAQ')) || DEFAULT_FAQ;
                 this.bookings = JSON.parse(localStorage.getItem('ST_BOOKINGS')) || [];
+                this.adminUsername = localStorage.getItem('ST_ADMIN_USER') || 'admin';
+                this.adminPassword = localStorage.getItem('ST_ADMIN_PASS') || 'admin123';
             },
 
             async save() {
@@ -437,6 +448,8 @@
                     localStorage.setItem('ST_FAQ', JSON.stringify(this.faq));
                     localStorage.setItem('ST_TEAM', JSON.stringify(this.team));
                     localStorage.setItem('ST_BOOKINGS', JSON.stringify(this.bookings));
+                    localStorage.setItem('ST_ADMIN_USER', this.adminUsername);
+                    localStorage.setItem('ST_ADMIN_PASS', this.adminPassword);
                 }
             },
 
@@ -1016,16 +1029,16 @@
                                 <i class="ph ph-lock-key"></i>
                             </div>
                             <h2 class="text-2xl font-bold text-primary">Login Administrator</h2>
-                            <p class="text-xs text-gray-400 mt-1">Gunakan kredensial default untuk mengakses database internal.</p>
+                            <p class="text-xs text-gray-400 mt-1">Gunakan kredensial admin Anda untuk mengakses database internal.</p>
                         </div>
                         <form onsubmit="handleAdminLogin(event)" class="space-y-6">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Username</label>
-                                <input type="text" id="a-user" value="admin" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                                <input type="text" id="a-user" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-                                <input type="password" id="a-pass" value="admin123" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                                <input type="password" id="a-pass" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
                             </div>
                             <button type="submit" class="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg hover:bg-secondary transition-colors shadow-lg">
                                 Autentikasi Masuk
@@ -1070,6 +1083,9 @@
                                     <button onclick="renderAdminTab('faq')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-3 transition ${activeTab === 'faq' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-light'}">
                                         <i class="ph ph-question text-lg"></i> Kelola FAQ
                                     </button>
+                                    <button onclick="renderAdminTab('security')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-3 transition ${activeTab === 'security' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-light'}">
+                                        <i class="ph ph-lock-key-open text-lg"></i> Keamanan Admin
+                                    </button>
                                     <button onclick="renderAdminTab('export')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-3 transition ${activeTab === 'export' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-light'}">
                                         <i class="ph ph-download-simple text-lg"></i> Ekspor Database (JSON)
                                     </button>
@@ -1091,6 +1107,7 @@
                     case 'bookings': return AdminView.BookingsTab();
                     case 'site': return AdminView.SiteTab();
                     case 'faq': return AdminView.FaqTab();
+                    case 'security': return AdminView.SecurityTab();
                     case 'export': return AdminView.ExportTab();
                 }
             },
@@ -1335,6 +1352,41 @@
                 </form>
             `,
 
+            SecurityTab: () => `
+                <div class="border-b pb-4 mb-6">
+                    <h3 class="text-xl font-bold text-primary">Keamanan Administrator</h3>
+                    <p class="text-xs text-gray-400 mt-1">Ganti Username dan Password login dasbor CMS Anda untuk menjaga keamanan data.</p>
+                </div>
+
+                <form id="admin-security-form" onsubmit="saveAdminSecurity(event)" class="space-y-6">
+                    <div class="space-y-4 max-w-md">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Username Baru *</label>
+                            <input type="text" id="sec-username" value="${AppState.adminUsername}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Password Lama (Verifikasi) *</label>
+                            <input type="password" id="sec-old-pass" required placeholder="Masukkan password lama Anda" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Password Baru *</label>
+                            <input type="password" id="sec-new-pass" required placeholder="Minimal 6 karakter" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Konfirmasi Password Baru *</label>
+                            <input type="password" id="sec-confirm-pass" required placeholder="Masukkan ulang password baru" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                        </div>
+                    </div>
+                    
+                    <div class="pt-2">
+                        <button type="submit" class="bg-primary hover:bg-secondary text-white px-6 py-3 rounded-xl text-xs font-bold transition flex items-center gap-2">
+                            <i class="ph ph-shield-check"></i> Perbarui Kredensial Admin
+                        </button>
+                        <p class="text-[10px] text-gray-400 mt-2">Catatan: Setelah berhasil memperbarui kredensial, sistem akan otomatis mengeluarkan Anda untuk masuk kembali menggunakan detail baru.</p>
+                    </div>
+                </form>
+            `,
+
             ExportTab: () => {
                 const dbJson = JSON.stringify({
                     site: AppState.site,
@@ -1575,13 +1627,13 @@
             const user = document.getElementById('a-user').value;
             const pass = document.getElementById('a-pass').value;
 
-            if (user === 'admin' && pass === 'admin123') {
+            if (user === AppState.adminUsername && pass === AppState.adminPassword) {
                 AppState.isAdminAuthenticated = true;
                 sessionStorage.setItem('ST_ADMIN_AUTH', 'true');
                 showToast('Login berhasil! Selamat datang Admin.', 'success');
                 window.location.hash = '#admin';
             } else {
-                showToast('Kredensial salah! Coba admin / admin123', 'error');
+                showToast('Kredensial salah! Silakan coba lagi.', 'error');
             }
         };
 
@@ -1693,6 +1745,85 @@
             } catch (err) {
                 console.error(err);
                 showToast('Gagal memperbarui pengaturan website.', 'error');
+            }
+        };
+
+        // Ganti Username & Password Admin secara Dinamis
+        window.saveAdminSecurity = async (event) => {
+            event.preventDefault();
+
+            const oldPass = document.getElementById('sec-old-pass').value;
+            const newUsername = document.getElementById('sec-username').value;
+            const newPass = document.getElementById('sec-new-pass').value;
+            const confirmPass = document.getElementById('sec-confirm-pass').value;
+
+            if (oldPass !== AppState.adminPassword) {
+                showToast('Password lama Anda tidak cocok!', 'error');
+                return;
+            }
+
+            if (newPass.length < 6) {
+                showToast('Password baru minimal harus 6 karakter!', 'error');
+                return;
+            }
+
+            if (newPass !== confirmPass) {
+                showToast('Konfirmasi password baru tidak cocok!', 'error');
+                return;
+            }
+
+            const confirmed = await showConfirm(
+                'Perbarui Kredensial',
+                'Apakah Anda yakin ingin mengganti Username dan Password login dasbor admin Anda?'
+            );
+
+            if (confirmed) {
+                showToast('Memproses pembaruan keamanan...', 'info');
+
+                AppState.adminUsername = newUsername;
+                AppState.adminPassword = newPass;
+
+                try {
+                    if (useSupabase && supabaseClient) {
+                        // Simpan kredensial ke Supabase site_settings
+                        const { error } = await supabaseClient.from('site_settings').upsert({
+                            id: 1,
+                            logo: AppState.site.logo,
+                            tagline: AppState.site.tagline,
+                            email: AppState.site.email,
+                            whatsapp: AppState.site.whatsapp,
+                            phone: AppState.site.phone,
+                            address: AppState.site.address,
+                            about_snippet: AppState.site.aboutSnippet,
+                            admin_username: newUsername,
+                            admin_password: newPass
+                        });
+
+                        if (error) throw error;
+                        
+                        // backup local
+                        localStorage.setItem('ST_ADMIN_USER', newUsername);
+                        localStorage.setItem('ST_ADMIN_PASS', newPass);
+
+                        showToast('Keamanan cloud berhasil ditingkatkan!', 'success');
+                    } else {
+                        // backup local fallback
+                        localStorage.setItem('ST_ADMIN_USER', newUsername);
+                        localStorage.setItem('ST_ADMIN_PASS', newPass);
+                        await AppState.save();
+
+                        showToast('Keamanan lokal berhasil ditingkatkan!', 'success');
+                    }
+
+                    // Logout otomatis untuk memaksa login ulang dengan kredensial baru
+                    setTimeout(() => {
+                        handleAdminLogout();
+                    }, 1500);
+
+                } catch (err) {
+                    console.error("Gagal memperbarui keamanan admin:", err);
+                    showToast('Gagal mengubah password. Pastikan tabel site_settings Anda sudah mendukung kolom admin_username dan admin_password.', 'error');
+                }
             }
         };
 
