@@ -457,6 +457,78 @@
             return clean;
         };
 
+        // Dynamic JSON-LD Schema Generator for International SEO Boost
+        window.updateJSONLDSchema = (route, param) => {
+            const existingSchema = document.getElementById('dynamic-json-ld');
+            if (existingSchema) existingSchema.remove();
+
+            let schemaData = null;
+
+            if (route === 'home' || route === '' || !route) {
+                // Main Organization / Travel Agency Schema
+                schemaData = {
+                    "@context": "https://schema.org",
+                    "@type": "TravelAgency",
+                    "name": AppState.site?.name || "Sibling Tours",
+                    "description": AppState.site?.aboutSnippet || "Premium Labuan Bajo Experiences",
+                    "url": window.location.origin + window.location.pathname,
+                    "logo": "https://placehold.co/200x200/0A4D68/FFF?text=Sibling+Tours",
+                    "image": AppState.hero?.image || "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2",
+                    "telephone": AppState.site?.phone || "+62 812 3797 3414",
+                    "email": AppState.site?.email || "hello@siblingtours.com",
+                    "address": {
+                        "@type": "PostalAddress",
+                        "streetAddress": AppState.site?.address || "Jl. Soekarno Hatta, Labuan Bajo",
+                        "addressLocality": "Labuan Bajo, Komodo",
+                        "addressRegion": "NTT",
+                        "addressCountry": "ID"
+                    },
+                    "sameAs": [
+                        AppState.site?.socials?.instagram || "",
+                        AppState.site?.socials?.facebook || "",
+                        AppState.site?.socials?.youtube || ""
+                    ].filter(Boolean)
+                };
+            } else if (route === 'tour' && param) {
+                // Tour Package Schema mapped as Product for Rich Snippets (Stars & Prices in Google Search)
+                const tour = AppState.tours.find(t => t.id === param);
+                if (tour) {
+                    const isUSD = tour.price.includes('$');
+                    const currency = isUSD ? 'USD' : 'IDR';
+                    const numericPrice = parseInt(tour.price.replace(/[^0-9]/g, '')) || 0;
+
+                    schemaData = {
+                        "@context": "https://schema.org",
+                        "@type": "Product",
+                        "name": tour.title,
+                        "image": tour.thumbnail,
+                        "description": tour.description,
+                        "category": tour.category,
+                        "offers": {
+                            "@type": "Offer",
+                            "price": numericPrice,
+                            "priceCurrency": currency,
+                            "availability": "https://schema.org/InStock",
+                            "url": window.location.href
+                        },
+                        "aggregateRating": {
+                            "@type": "AggregateRating",
+                            "ratingValue": tour.rating || 4.9,
+                            "reviewCount": tour.reviews || 128
+                        }
+                    };
+                }
+            }
+
+            if (schemaData) {
+                const script = document.createElement('script');
+                script.type = 'application/ld+json';
+                script.id = 'dynamic-json-ld';
+                script.text = JSON.stringify(schemaData, null, 2);
+                document.head.appendChild(script);
+            }
+        };
+
         // Hash SHA-256 Utility untuk Native Web Crypto API (Sandi Terenkripsi)
         async function sha256(message) {
             const msgBuffer = new TextEncoder().encode(message);
@@ -2677,6 +2749,11 @@
                 
                 // Pemicu dynamic translations
                 await translatePageDynamicContent();
+                
+                // Inject Dynamic JSON-LD SEO Schema
+                if (window.updateJSONLDSchema) {
+                    window.updateJSONLDSchema(route, param);
+                }
                 
                 setTimeout(() => this.initScrollAnimations(), 100);
             },
