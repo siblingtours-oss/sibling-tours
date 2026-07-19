@@ -1524,36 +1524,36 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Nama Perusahaan / Logo *</label>
-                            <input type="text" id="s-logo" value="${AppState.site.logo}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                            <input type="text" id="s-logo" value="${AppState.site?.logo || ''}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Tagline Promosi *</label>
-                            <input type="text" id="s-tagline" value="${AppState.site.tagline}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                            <input type="text" id="s-tagline" value="${AppState.site?.tagline || ''}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Email Resmi Layanan *</label>
-                            <input type="email" id="s-email" value="${AppState.site.email}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                            <input type="email" id="s-email" value="${AppState.site?.email || ''}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">WhatsApp CS (Format Tanpa '+') *</label>
-                            <input type="text" id="s-whatsapp" value="${AppState.site.whatsapp}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                            <input type="text" id="s-whatsapp" value="${AppState.site?.whatsapp || ''}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Nomor HP Kontak *</label>
-                            <input type="text" id="s-phone" value="${AppState.site.phone}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                            <input type="text" id="s-phone" value="${AppState.site?.phone || ''}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Tautan Instagram</label>
-                            <input type="url" id="s-instagram" value="${AppState.site.socials.instagram}" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                            <input type="url" id="s-instagram" value="${AppState.site?.socials?.instagram || ''}" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
                         </div>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Alamat Fisik Kantor *</label>
-                        <input type="text" id="s-address" value="${AppState.site.address}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
+                        <input type="text" id="s-address" value="${AppState.site?.address || ''}" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Deskripsi Perusahaan *</label>
-                        <textarea id="s-about" rows="3" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">${AppState.site.aboutSnippet}</textarea>
+                        <textarea id="s-about" rows="3" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm">${AppState.site?.aboutSnippet || ''}</textarea>
                     </div>
                     <button type="submit" class="bg-primary hover:bg-secondary text-white px-6 py-3 rounded-xl text-xs font-bold transition">
                         Simpan Semua Pengaturan
@@ -2308,9 +2308,9 @@
                 address: document.getElementById('s-address').value,
                 aboutSnippet: document.getElementById('s-about').value,
                 socials: {
-                    instagram: document.getElementById('s-instagram').value,
-                    facebook: AppState.site.socials.facebook,
-                    youtube: AppState.site.socials.youtube
+                    instagram: document.getElementById('s-instagram').value || '',
+                    facebook: AppState.site?.socials?.facebook || 'https://facebook.com',
+                    youtube: AppState.site?.socials?.youtube || 'https://youtube.com'
                 }
             };
 
@@ -2318,22 +2318,51 @@
 
             try {
                 if (useSupabase && supabaseClient) {
-                    const { error } = await supabaseClient.from('site_settings').upsert({
-                        id: 1,
-                        logo: siteUpdates.logo,
-                        tagline: siteUpdates.tagline,
-                        email: siteUpdates.email,
-                        whatsapp: siteUpdates.whatsapp,
-                        phone: siteUpdates.phone,
-                        address: siteUpdates.address,
-                        about_snippet: siteUpdates.aboutSnippet,
-                        instagram: siteUpdates.socials.instagram
-                    });
-                    if (error) throw error;
+                    // Coba update baris id=1 terlebih dahulu untuk mengamankan data kolom lain
+                    const { error: updateError } = await supabaseClient
+                        .from('site_settings')
+                        .update({
+                            logo: siteUpdates.logo,
+                            tagline: siteUpdates.tagline,
+                            email: siteUpdates.email,
+                            whatsapp: siteUpdates.whatsapp,
+                            phone: siteUpdates.phone,
+                            address: siteUpdates.address,
+                            about_snippet: siteUpdates.aboutSnippet,
+                            instagram: siteUpdates.socials.instagram
+                        })
+                        .eq('id', 1);
+
+                    if (updateError) {
+                        // Jika baris id=1 belum pernah terbuat, lakukan upsert lengkap dengan kredensial aman
+                        const { error: upsertError } = await supabaseClient
+                            .from('site_settings')
+                            .upsert({
+                                id: 1,
+                                logo: siteUpdates.logo,
+                                tagline: siteUpdates.tagline,
+                                email: siteUpdates.email,
+                                whatsapp: siteUpdates.whatsapp,
+                                phone: siteUpdates.phone,
+                                address: siteUpdates.address,
+                                about_snippet: siteUpdates.aboutSnippet,
+                                instagram: siteUpdates.socials.instagram,
+                                admin_username: AppState.adminUsername || 'admin',
+                                admin_password: AppState.adminPassword || DEFAULT_PASS_HASH
+                            });
+                        if (upsertError) throw upsertError;
+                    }
                 } else {
                     AppState.site = siteUpdates;
                     await AppState.save();
                 }
+
+                // Selalu perbarui memory state agar sinkron seketika
+                AppState.site = siteUpdates;
+
+                // Re-render Header & Footer secara real-time di layar browser
+                document.getElementById('header-container').innerHTML = Components.Header();
+                document.getElementById('footer-container').innerHTML = Components.Footer();
 
                 showToast('Pengaturan website berhasil disimpan!', 'success');
                 await window.renderAdminTab('site');
