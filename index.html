@@ -447,6 +447,16 @@
         let loginAttempts = 0;
         let lockoutTime = null;
 
+        // Utility to clean phone number to international WhatsApp format
+        window.getCleanWhatsAppNumber = (num) => {
+            if (!num) return "";
+            let clean = num.replace(/[^0-9]/g, ''); // Ambil hanya karakter angka
+            if (clean.startsWith('0')) {
+                clean = '62' + clean.slice(1); // Ubah awalan 08... menjadi format internasional 628...
+            }
+            return clean;
+        };
+
         // Hash SHA-256 Utility untuk Native Web Crypto API (Sandi Terenkripsi)
         async function sha256(message) {
             const msgBuffer = new TextEncoder().encode(message);
@@ -989,7 +999,7 @@
                                     </a>
                                     
                                     <div class="space-y-3">
-                                        <a href="https://wa.me/${AppState.site.whatsapp}?text=Halo Sibling Tours, saya ingin bertanya tentang paket: ${tour.title}." target="_blank" class="flex items-center justify-center gap-2 w-full border border-gray-300 text-dark py-3 rounded-xl font-medium hover:bg-gray-50 transition-colors">
+                                        <a href="https://wa.me/${window.getCleanWhatsAppNumber(AppState.site.whatsapp)}?text=Halo Sibling Tours, saya ingin bertanya tentang paket: ${tour.title}." target="_blank" class="flex items-center justify-center gap-2 w-full border border-gray-300 text-dark py-3 rounded-xl font-medium hover:bg-gray-50 transition-colors">
                                             <i class="ph-fill ph-whatsapp-logo text-green-500 text-xl"></i> ${t('detailsWaConsult')}
                                         </a>
                                     </div>
@@ -1647,7 +1657,8 @@
                 this.header.innerHTML = Components.Header();
                 this.footer.innerHTML = Components.Footer();
                 
-                document.getElementById('floating-wa').href = `https://wa.me/${AppState.site.whatsapp}?text=Halo Sibling Tours, saya ingin menanyakan tentang paket tour premium ke Labuan Bajo.`;
+                const cleanWa = window.getCleanWhatsAppNumber(AppState.site.whatsapp);
+                document.getElementById('floating-wa').href = `https://wa.me/${cleanWa}?text=Halo Sibling Tours, saya ingin menanyakan tentang paket tour premium ke Labuan Bajo.`;
 
                 window.addEventListener('hashchange', () => this.handleRoute());
                 window.addEventListener('scroll', this.handleScroll);
@@ -2062,7 +2073,8 @@
 
                 setTimeout(() => {
                     const message = `*Konfirmasi Pemesanan Sibling Tours*%0A%0A*ID Pemesanan:* #${newBooking.id}%0A*Nama:* ${name}%0A*Email:* ${email}%0A*WhatsApp:* ${phone}%0A*Kebangsaan:* ${country}%0A*Paket:* ${tour}%0A*Tanggal Mulai:* ${date}%0A*Pax:* ${guests} Orang%0A*Catatan:* ${notes}%0A%0A_Saya telah mengunduh Invoice PDF resmi dari web dan siap melakukan transfer deposit._`;
-                    const waUrl = `https://wa.me/${AppState.site.whatsapp}?text=${message}`;
+                    const cleanWa = window.getCleanWhatsAppNumber(AppState.site.whatsapp);
+                    const waUrl = `https://wa.me/${cleanWa}?text=${message}`;
                     window.open(waUrl, '_blank');
                     window.location.hash = '#home';
                 }, 2000);
@@ -2318,23 +2330,17 @@
 
             try {
                 if (useSupabase && supabaseClient) {
-                    // Coba update baris id=1 terlebih dahulu untuk mengamankan data kolom lain
-                    const { error: updateError } = await supabaseClient
+                    // Cek terlebih dahulu apakah baris id=1 sudah ada di database cloud
+                    const { data: checkData, error: checkError } = await supabaseClient
                         .from('site_settings')
-                        .update({
-                            logo: siteUpdates.logo,
-                            tagline: siteUpdates.tagline,
-                            email: siteUpdates.email,
-                            whatsapp: siteUpdates.whatsapp,
-                            phone: siteUpdates.phone,
-                            address: siteUpdates.address,
-                            about_snippet: siteUpdates.aboutSnippet,
-                            instagram: siteUpdates.socials.instagram
-                        })
-                        .eq('id', 1);
+                        .select('id')
+                        .eq('id', 1)
+                        .maybeSingle();
 
-                    if (updateError) {
-                        // Jika baris id=1 belum pernah terbuat, lakukan upsert lengkap dengan kredensial aman
+                    if (checkError) throw checkError;
+
+                    if (!checkData) {
+                        // Jika baris belum ada, lakukan inisialisasi upsert lengkap dengan kredensial aman
                         const { error: upsertError } = await supabaseClient
                             .from('site_settings')
                             .upsert({
@@ -2351,6 +2357,22 @@
                                 admin_password: AppState.adminPassword || DEFAULT_PASS_HASH
                             });
                         if (upsertError) throw upsertError;
+                    } else {
+                        // Jika sudah ada, update kolom informasi umum saja agar kredensial admin tetap terlindungi
+                        const { error: updateError } = await supabaseClient
+                            .from('site_settings')
+                            .update({
+                                logo: siteUpdates.logo,
+                                tagline: siteUpdates.tagline,
+                                email: siteUpdates.email,
+                                whatsapp: siteUpdates.whatsapp,
+                                phone: siteUpdates.phone,
+                                address: siteUpdates.address,
+                                about_snippet: siteUpdates.aboutSnippet,
+                                instagram: siteUpdates.socials.instagram
+                            })
+                            .eq('id', 1);
+                        if (updateError) throw updateError;
                     }
                 } else {
                     AppState.site = siteUpdates;
@@ -2360,9 +2382,11 @@
                 // Selalu perbarui memory state agar sinkron seketika
                 AppState.site = siteUpdates;
 
-                // Re-render Header & Footer secara real-time di layar browser
+                // Re-render Header, Footer, dan WhatsApp Floating Link secara real-time di layar browser
                 document.getElementById('header-container').innerHTML = Components.Header();
                 document.getElementById('footer-container').innerHTML = Components.Footer();
+                const cleanWa = window.getCleanWhatsAppNumber(AppState.site.whatsapp);
+                document.getElementById('floating-wa').href = `https://wa.me/${cleanWa}?text=Halo Sibling Tours, saya ingin menanyakan tentang paket tour premium ke Labuan Bajo.`;
 
                 showToast('Pengaturan website berhasil disimpan!', 'success');
                 await window.renderAdminTab('site');
