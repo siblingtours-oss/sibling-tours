@@ -401,10 +401,10 @@
         ];
 
         const DEFAULT_GALLERY = [
-            { category: "nature", url: "https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?auto=format&fit=crop&w=600" },
-            { category: "boats", url: "https://images.unsplash.com/photo-1534008897995-27a23e859048?auto=format&fit=crop&w=600" },
-            { category: "wildlife", url: "https://images.unsplash.com/photo-1600216668388-344cb89d9774?auto=format&fit=crop&w=600" },
-            { category: "nature", url: "https://images.unsplash.com/photo-1621991468822-77eb60c5c64c?auto=format&fit=crop&w=600" }
+            { id: 1, category: "nature", url: "https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?auto=format&fit=crop&w=600" },
+            { id: 2, category: "boats", url: "https://images.unsplash.com/photo-1534008897995-27a23e859048?auto=format&fit=crop&w=600" },
+            { id: 3, category: "wildlife", url: "https://images.unsplash.com/photo-1600216668388-344cb89d9774?auto=format&fit=crop&w=600" },
+            { id: 4, category: "nature", url: "https://images.unsplash.com/photo-1621991468822-77eb60c5c64c?auto=format&fit=crop&w=600" }
         ];
 
         const DEFAULT_TESTIMONIALS = [
@@ -1015,15 +1015,15 @@
                 return `
                     <section class="pt-32 pb-16 bg-primary text-white text-center">
                         <div class="container mx-auto px-6 animate-fade-in-up">
-                            <h1 class="text-4xl md:text-5xl font-bold mb-4">${t('bookingTitle')}</h1>
-                            <p class="text-lg text-gray-300 max-w-2xl mx-auto font-light">${t('bookingSubtitle')}</p>
+                            <h1 class="text-4xl md:text-5xl font-bold mb-4 translate-dynamic">${t('bookingTitle')}</h1>
+                            <p class="text-lg text-gray-300 max-w-2xl mx-auto font-light translate-dynamic">${t('bookingSubtitle')}</p>
                         </div>
                     </section>
                     <section class="py-16 bg-light min-h-[50vh]">
                         <div class="container mx-auto px-6 max-w-3xl">
                             <div class="bg-white p-8 md:p-12 rounded-3xl shadow-lg border border-gray-100">
                                 <h2 class="text-2xl font-bold text-primary mb-8 border-b pb-4 flex items-center gap-2">
-                                    <i class="ph ph-notebook-fill"></i> Data Reservasi
+                                    <i class="ph ph-notebook-fill text-secondary"></i> Data Reservasi
                                 </h2>
                                 <form id="booking-form" class="space-y-6" onsubmit="handleBookingFormSubmit(event)">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1045,11 +1045,21 @@
                                         </div>
                                     </div>
                                     
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-700 mb-2">${t('formTour')}</label>
-                                        <select id="b-tour" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition bg-white">
-                                            ${AppState.tours.map(t => `<option value="${t.title}" data-price="${t.price}" ${t.id === tourId ? 'selected' : ''}>${t.title} (${t.price})</option>`).join('')}
-                                        </select>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-2">${t('formTour')}</label>
+                                            <select id="b-tour" onchange="updateLivePricing()" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition bg-white">
+                                                ${AppState.tours.map(t => `<option value="${t.title}" data-price="${t.price}" ${t.id === tourId ? 'selected' : ''}>${t.title} (${t.price})</option>`).join('')}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-semibold text-gray-700 mb-2">Pilihan Tipe Kabin / Cabin Class *</label>
+                                            <select id="b-cabin" onchange="updateLivePricing()" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition bg-white">
+                                                <option value="Shared Cabin" data-surcharge="0">Shared Cabin (Standard / No Surcharge)</option>
+                                                <option value="Double Cabin" data-surcharge="1500000">Double Cabin (+ Rp 1.500.000 / pax)</option>
+                                                <option value="Master Cabin with Balcony" data-surcharge="3000000">Master Cabin with Balcony (+ Rp 3.000.000 / pax)</option>
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1059,7 +1069,32 @@
                                         </div>
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 mb-2">${t('formGuests')}</label>
-                                            <input type="number" id="b-guests" min="1" value="2" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                                            <input type="number" id="b-guests" oninput="updateLivePricing()" min="1" value="2" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                                        </div>
+                                    </div>
+
+                                    <!-- REAL-TIME PRICE CALCULATOR BREAKDOWN -->
+                                    <div class="bg-gray-50 p-6 rounded-2xl border border-gray-200 space-y-3">
+                                        <h4 class="font-bold text-primary text-sm uppercase tracking-wider translate-dynamic">Rincian Transparansi Biaya</h4>
+                                        <div class="flex justify-between text-sm text-gray-600">
+                                            <span class="translate-dynamic">Harga Dasar / Base Price (per pax)</span>
+                                            <span id="price-base" class="font-semibold text-dark">Rp 0</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm text-gray-600">
+                                            <span class="translate-dynamic">Tambahan Kabin / Cabin Surcharge (per pax)</span>
+                                            <span id="price-surcharge" class="font-semibold text-secondary">Rp 0</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm text-gray-600 border-t border-gray-200 pt-2">
+                                            <span class="translate-dynamic">Subtotal per Orang</span>
+                                            <span id="price-subtotal" class="font-bold text-dark">Rp 0</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm text-gray-600">
+                                            <span class="translate-dynamic">Jumlah Tamu / Guests</span>
+                                            <span id="price-guests" class="font-semibold text-dark">2 Pax</span>
+                                        </div>
+                                        <div class="flex justify-between text-lg font-extrabold text-primary border-t-2 border-dashed border-gray-300 pt-3">
+                                            <span class="translate-dynamic">Total Estimasi Bayar</span>
+                                            <span id="price-grand-total">Rp 0</span>
                                         </div>
                                     </div>
 
@@ -1440,7 +1475,7 @@
                                     <th class="px-4 py-3">ID Booking</th>
                                     <th class="px-4 py-3">Tamu</th>
                                     <th class="px-4 py-3">Kontak</th>
-                                    <th class="px-4 py-3">Paket Tour</th>
+                                    <th class="px-4 py-3">Paket Tour & Kabin</th>
                                     <th class="px-4 py-3">Tanggal Trip</th>
                                     <th class="px-4 py-3">Status</th>
                                     <th class="px-4 py-3 text-right">Aksi</th>
@@ -1455,7 +1490,11 @@
                                             <a href="https://wa.me/${book.phone}" target="_blank" class="text-green-600 hover:underline"><i class="ph ph-whatsapp-logo"></i> ${book.phone}</a>
                                             <span class="block text-[10px] text-gray-400">${book.email}</span>
                                         </td>
-                                        <td class="px-4 py-3 font-medium text-dark">${book.tour} <span class="block text-[10px] font-normal text-gray-400">${book.guests} Pax</span></td>
+                                        <td class="px-4 py-3 font-medium text-dark">
+                                            ${book.tour} 
+                                            <span class="block text-[10px] text-gray-400">${book.guests} Pax</span>
+                                            <span class="block text-[10px] font-bold text-secondary">${book.notes && book.notes.includes('Kabin:') ? book.notes.split(' | ')[0] : 'Kabin: Standard/Shared'}</span>
+                                        </td>
                                         <td class="px-4 py-3">${book.date}</td>
                                         <td class="px-4 py-3">
                                             <select onchange="updateBookingStatus('${book.id}', this.value)" class="bg-light border border-gray-200 text-[10px] rounded px-1.5 py-1">
@@ -1645,171 +1684,6 @@
             }
         };
 
-        const App = {
-            root: document.getElementById('app-root'),
-            header: document.getElementById('header-container'),
-            footer: document.getElementById('footer-container'),
-            loader: document.getElementById('loader'),
-
-            async init() {
-                await AppState.init();
-
-                this.header.innerHTML = Components.Header();
-                this.footer.innerHTML = Components.Footer();
-                
-                const cleanWa = window.getCleanWhatsAppNumber(AppState.site.whatsapp);
-                document.getElementById('floating-wa').href = `https://wa.me/${cleanWa}?text=Halo Sibling Tours, saya ingin menanyakan tentang paket tour premium ke Labuan Bajo.`;
-
-                window.addEventListener('hashchange', () => this.handleRoute());
-                window.addEventListener('scroll', this.handleScroll);
-                this.setupMobileMenu();
-
-                this.handleRoute();
-
-                setTimeout(() => {
-                    this.loader.style.opacity = '0';
-                    setTimeout(() => this.loader.style.display = 'none', 500);
-                }, 800);
-            },
-
-            async handleRoute() {
-                const hash = window.location.hash.slice(1) || 'home';
-                const parts = hash.split('/');
-                const route = parts[0];
-                const param = parts[1];
-
-                window.scrollTo({ top: 0, behavior: 'auto' });
-
-                if (route === 'home') {
-                    this.header.classList.add('header-transparent');
-                    this.header.classList.remove('header-scrolled', 'bg-white', 'text-primary', 'shadow-md');
-                } else {
-                    this.header.classList.remove('header-transparent');
-                    this.header.classList.add('bg-white', 'text-primary', 'shadow-md');
-                }
-
-                document.getElementById('mobile-menu').classList.add('translate-x-full');
-
-                let html = '';
-                switch (route) {
-                    case 'home': html = Views.Home(); break;
-                    case 'tours': html = Views.Tours(); break;
-                    case 'tour': html = Views.TourDetails(param); break;
-                    case 'booking': html = Views.Booking(param); break;
-                    case 'gallery': html = Views.Gallery(); break;
-                    case 'about': html = Views.About(); break;
-                    case 'contact': html = Views.Contact(); break;
-                    case 'admin': 
-                        html = AppState.isAdminAuthenticated ? AdminView.Dashboard() : AdminView.Login(); 
-                        break;
-                    default: html = Views.NotFound(); break;
-                }
-
-                this.root.innerHTML = html;
-                
-                // Sinkronisasi Header Navbar
-                this.header.innerHTML = Components.Header();
-                this.setupMobileMenu();
-                
-                // Pemicu dynamic translations
-                await translatePageDynamicContent();
-                
-                setTimeout(() => this.initScrollAnimations(), 100);
-            },
-
-            handleScroll() {
-                const header = document.getElementById('header-container');
-                const isHome = window.location.hash === '' || window.location.hash === '#home';
-                
-                if (isHome) {
-                    if (window.scrollY > 50) {
-                        header.classList.add('header-scrolled');
-                        header.classList.remove('header-transparent');
-                    } else {
-                        header.classList.remove('header-scrolled');
-                        header.classList.add('header-transparent');
-                    }
-                }
-            },
-
-            setupMobileMenu() {
-                const btn = document.getElementById('mobile-menu-btn');
-                const closeBtn = document.getElementById('close-menu-btn');
-                const menu = document.getElementById('mobile-menu');
-                
-                if (btn && closeBtn && menu) {
-                    btn.addEventListener('click', () => menu.classList.remove('translate-x-full'));
-                    closeBtn.addEventListener('click', () => menu.classList.add('translate-x-full'));
-                }
-            },
-
-            initScrollAnimations() {
-                const reveals = document.querySelectorAll('.reveal');
-                if(!reveals.length) return;
-
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            entry.target.classList.add('active');
-                        }
-                    });
-                }, { threshold: 0.1 });
-
-                reveals.forEach(el => observer.observe(el));
-            }
-        };
-
-        // Custom Toast Notification Maker (Sistem Auto-Destroy Mulus)
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const bgClass = type === 'success' ? 'bg-emerald-500' : (type === 'info' ? 'bg-blue-500' : 'bg-red-500');
-            const iconClass = type === 'success' ? 'ph-check-circle' : (type === 'info' ? 'ph-info' : 'ph-warning');
-            
-            const toast = document.createElement('div');
-            toast.className = `${bgClass} text-white px-5 py-4 rounded-2xl shadow-xl flex items-center gap-3 animate-fade-in-up max-w-sm pointer-events-auto transition-all duration-500 transform translate-y-0 opacity-100`;
-            toast.innerHTML = `
-                <i class="ph ${iconClass} text-2xl shrink-0"></i>
-                <div class="text-sm font-semibold">${message}</div>
-            `;
-            
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.classList.add('opacity-0', '-translate-y-4');
-                setTimeout(() => toast.remove(), 500);
-            }, 3000);
-        }
-
-        // Accordion FAQ Toggle
-        window.toggleFaq = (index) => {
-            const content = document.getElementById(`faq-content-${index}`);
-            const icon = document.getElementById(`faq-icon-${index}`);
-            
-            if (content.classList.contains('hidden')) {
-                content.classList.remove('hidden');
-                icon.classList.add('rotate-180');
-            } else {
-                content.classList.add('hidden');
-                icon.classList.remove('rotate-180');
-            }
-        };
-
-        // Multi-Language Toggle
-        window.toggleLangDropdown = () => {
-            document.getElementById('lang-dropdown').classList.toggle('hidden');
-        };
-
-        window.changeLanguage = (lang) => {
-            AppState.lang = lang;
-            localStorage.setItem('ST_LANG', lang);
-            document.getElementById('lang-dropdown')?.classList.add('hidden');
-            showToast(lang === 'en' ? 'Language switched to English' : 'Bahasa diganti ke Indonesia', 'success');
-            App.handleRoute();
-        };
-
-        // =========================================================================
-        // AUTOMATIC TRANSLATION ENGINE LOGIC (Indonesian -> English)
-        // =========================================================================
         const TranslationCache = {
             get(text, targetLang) {
                 const cache = JSON.parse(localStorage.getItem('ST_TRANS_CACHE') || '{}');
@@ -1871,6 +1745,18 @@
             }
         }
 
+        window.toggleLangDropdown = () => {
+            document.getElementById('lang-dropdown').classList.toggle('hidden');
+        };
+
+        window.changeLanguage = (lang) => {
+            AppState.lang = lang;
+            localStorage.setItem('ST_LANG', lang);
+            document.getElementById('lang-dropdown')?.classList.add('hidden');
+            showToast(lang === 'en' ? 'Language switched to English' : 'Bahasa diganti ke Indonesia', 'success');
+            App.handleRoute();
+        };
+
         window.addEventListener('click', (e) => {
             if (!e.target.closest('#lang-dropdown') && !e.target.closest('button[onclick="toggleLangDropdown()"]')) {
                 document.getElementById('lang-dropdown')?.classList.add('hidden');
@@ -1916,7 +1802,7 @@
                 doc.text(`ID: #${booking.id}`, 135, 24);
                 doc.text(`Date: ${booking.date}`, 135, 29);
 
-                // guest Details
+                // Guest Details
                 doc.setTextColor(...darkText);
                 doc.setFont('Helvetica', 'bold');
                 doc.setFontSize(12);
@@ -1952,7 +1838,7 @@
                 doc.rect(15, 108, 180, 8, 'F');
                 doc.setFontSize(9);
                 doc.setTextColor(...primaryColor);
-                doc.text('Selected Tour Package', 17, 113.5);
+                doc.text('Selected Tour & Cabin Class', 17, 113.5);
                 doc.text('Date', 115, 113.5);
                 doc.text('Guests', 145, 113.5);
                 doc.text('Total Cost', 170, 113.5);
@@ -1961,50 +1847,56 @@
                 doc.setFont('Helvetica', 'normal');
                 doc.setTextColor(...darkText);
                 
-                const splitTourName = doc.splitTextToSize(booking.tour, 90);
-                doc.text(splitTourName, 17, 122);
+                // Detailed parsing of cabin choice
+                const cabinChoice = booking.cabin || "Shared Cabin";
+                const displayTourAndCabin = [booking.tour, `Cabin: ${cabinChoice}`];
+                
+                doc.text(displayTourAndCabin, 17, 122);
                 doc.text(booking.date, 115, 122);
                 doc.text(`${booking.guests} Pax`, 145, 122);
 
-                let rawPrice = AppState.tours.find(t => t.title === booking.tour)?.price || "Rp 0";
-                let numericPrice = parseInt(rawPrice.replace(/[^0-9]/g, '')) || 0;
-                let calculatedTotal = numericPrice * booking.guests;
-                let formattedTotal = calculatedTotal > 0 ? 'Rp ' + calculatedTotal.toLocaleString('id-ID') : rawPrice;
-                
+                const totalFormatted = 'Rp ' + (booking.grandTotal || 0).toLocaleString('id-ID');
                 doc.setFont('Helvetica', 'bold');
-                doc.text(formattedTotal, 170, 122);
-                doc.line(15, 135, 195, 135);
+                doc.text(totalFormatted, 170, 122);
+                doc.line(15, 138, 195, 138);
+
+                // Cost Breakdown Subtable
+                doc.setFont('Helvetica', 'normal');
+                doc.setFontSize(8.5);
+                doc.setTextColor(...lightText);
+                doc.text(`Base Price per Pax: Rp ${(booking.basePrice || 0).toLocaleString('id-ID')}`, 15, 144);
+                doc.text(`Cabin Surcharge per Pax: Rp ${(booking.surcharge || 0).toLocaleString('id-ID')}`, 15, 149);
 
                 // Payment Instructions
                 doc.setFont('Helvetica', 'bold');
                 doc.setFontSize(11);
                 doc.setTextColor(...primaryColor);
-                doc.text('PAYMENT INSTRUCTIONS', 15, 150);
-                doc.line(15, 152, 195, 152);
+                doc.text('PAYMENT INSTRUCTIONS', 15, 160);
+                doc.line(15, 162, 195, 162);
 
                 doc.setFont('Helvetica', 'normal');
                 doc.setFontSize(9.5);
                 doc.setTextColor(...darkText);
-                doc.text('Silakan konfirmasi pesanan dengan mengirimkan DP (Down Payment) 50% atau pelunasan ke:', 15, 159);
+                doc.text('Silakan konfirmasi pesanan dengan mengirimkan DP (Down Payment) 50% atau pelunasan ke:', 15, 169);
                 
                 doc.setFillColor(248, 250, 252);
-                doc.rect(15, 163, 180, 20, 'F');
+                doc.rect(15, 173, 180, 20, 'F');
                 
                 doc.setFont('Helvetica', 'bold');
-                doc.text('Bank Central Asia (BCA)', 20, 169);
+                doc.text('Bank Central Asia (BCA)', 20, 179);
                 doc.setFont('Helvetica', 'normal');
-                doc.text('No Rekening: 091-234-5678', 20, 174);
-                doc.text('Atas Nama: Sibling Tours Labuan Bajo', 20, 179);
+                doc.text('No Rekening: 091-234-5678', 20, 184);
+                doc.text('Atas Nama: Sibling Tours Labuan Bajo', 20, 189);
 
                 // Notice
                 doc.setFont('Helvetica', 'bold');
                 doc.setTextColor(239, 68, 68);
-                doc.text('CATATAN PENTING:', 15, 192);
+                doc.text('CATATAN PENTING:', 15, 202);
                 doc.setFont('Helvetica', 'normal');
                 doc.setTextColor(...lightText);
                 doc.setFontSize(8.5);
-                doc.text('Setelah mengunduh file PDF ini, harap segera mengirimkannya beserta bukti pembayaran transfer Anda ke WhatsApp CS kami.', 15, 197);
-                doc.text('Tim kami akan memproses validasi tiket digital Anda dan merilis Kode Konfirmasi Trip resmi.', 15, 201);
+                doc.text('Setelah mengunduh file PDF ini, harap segera mengirimkannya beserta bukti pembayaran transfer Anda ke WhatsApp CS kami.', 15, 207);
+                doc.text('Tim kami akan memproses validasi tiket digital Anda dan merilis Kode Konfirmasi Trip resmi.', 15, 211);
 
                 doc.setDrawColor(...secondaryColor);
                 doc.setLineWidth(1);
@@ -2024,6 +1916,34 @@
             }
         };
 
+        // Live Price Calculations
+        window.updateLivePricing = () => {
+            const tourSelect = document.getElementById('b-tour');
+            if(!tourSelect) return;
+            const selectedOpt = tourSelect.options[tourSelect.selectedIndex];
+            const rawPrice = selectedOpt.getAttribute('data-price') || "Rp 0";
+            const basePrice = parseInt(rawPrice.replace(/[^0-9]/g, '')) || 0;
+
+            const cabinSelect = document.getElementById('b-cabin');
+            const cabinOpt = cabinSelect.options[cabinSelect.selectedIndex];
+            const surcharge = parseInt(cabinOpt.getAttribute('data-surcharge')) || 0;
+
+            const guestsInput = document.getElementById('b-guests');
+            const guests = parseInt(guestsInput.value) || 1;
+
+            const subtotal = basePrice + surcharge;
+            const grandTotal = subtotal * guests;
+
+            document.getElementById('price-base').innerText = 'Rp ' + basePrice.toLocaleString('id-ID');
+            document.getElementById('price-surcharge').innerText = surcharge > 0 ? '+ Rp ' + surcharge.toLocaleString('id-ID') : 'Rp 0';
+            document.getElementById('price-subtotal').innerText = 'Rp ' + subtotal.toLocaleString('id-ID');
+            document.getElementById('price-guests').innerText = guests + ' Pax';
+            document.getElementById('price-grand-total').innerText = 'Rp ' + grandTotal.toLocaleString('id-ID');
+
+            // Store transient pricing details for retrieval upon submit
+            window.lastCalculatedPricing = { basePrice, surcharge, grandTotal, guests };
+        };
+
         // Submit Form Booking & Persist Data
         window.handleBookingFormSubmit = async (event) => {
             event.preventDefault();
@@ -2033,15 +1953,25 @@
             const phone = document.getElementById('b-phone').value;
             const country = document.getElementById('b-country').value;
             const tour = document.getElementById('b-tour').value;
+            const cabin = document.getElementById('b-cabin').value;
             const date = document.getElementById('b-date').value;
-            const guests = document.getElementById('b-guests').value;
+            const guests = parseInt(document.getElementById('b-guests').value);
             const notes = document.getElementById('b-notes').value || 'Tidak ada';
 
+            const pricing = window.lastCalculatedPricing || { basePrice: 0, surcharge: 0, grandTotal: 0 };
             const bookingId = crypto.randomUUID().slice(0, 8);
+            
+            const formattedNotes = `Kabin: ${cabin} | Permintaan Khusus: ${notes}`;
+
             const newBooking = {
                 id: bookingId,
-                name, email, phone, country, tour, date, guests, notes,
-                status: 'Pending'
+                name, email, phone, country, tour, date, guests, 
+                notes: formattedNotes,
+                status: 'Pending',
+                cabin,
+                surcharge: pricing.surcharge,
+                basePrice: pricing.basePrice,
+                grandTotal: pricing.grandTotal
             };
 
             showToast('Menyimpan pesanan ke database...', 'info');
@@ -2056,7 +1986,7 @@
                         country: newBooking.country,
                         tour: newBooking.tour,
                         date: newBooking.date,
-                        guests: parseInt(newBooking.guests),
+                        guests: newBooking.guests,
                         notes: newBooking.notes,
                         status: newBooking.status
                     }]);
@@ -2072,7 +2002,7 @@
                 generatePDFInvoice(newBooking);
 
                 setTimeout(() => {
-                    const message = `*Konfirmasi Pemesanan Sibling Tours*%0A%0A*ID Pemesanan:* #${newBooking.id}%0A*Nama:* ${name}%0A*Email:* ${email}%0A*WhatsApp:* ${phone}%0A*Kebangsaan:* ${country}%0A*Paket:* ${tour}%0A*Tanggal Mulai:* ${date}%0A*Pax:* ${guests} Orang%0A*Catatan:* ${notes}%0A%0A_Saya telah mengunduh Invoice PDF resmi dari web dan siap melakukan transfer deposit._`;
+                    const message = `*Konfirmasi Pemesanan Sibling Tours*%0A%0A*ID Pemesanan:* #${newBooking.id}%0A*Nama:* ${name}%0A*Email:* ${email}%0A*WhatsApp:* ${phone}%0A*Kebangsaan:* ${country}%0A*Paket:* ${tour}%0A*Tipe Kabin:* ${cabin}%0A*Tanggal Mulai:* ${date}%0A*Pax:* ${guests} Orang%0A*Catatan:* ${notes}%0A*Total Estimasi:* Rp ${pricing.grandTotal.toLocaleString('id-ID')}%0A%0A_Saya telah mengunduh Invoice PDF resmi dari web dan siap melakukan transfer deposit._`;
                     const cleanWa = window.getCleanWhatsAppNumber(AppState.site.whatsapp);
                     const waUrl = `https://wa.me/${cleanWa}?text=${message}`;
                     window.open(waUrl, '_blank');
@@ -2107,12 +2037,10 @@
             const savedPass = AppState.adminPassword;
             let loginSuccessful = false;
 
-            // 1. Coba Autentikasi cloud via Supabase Auth jika diaktifkan
             if (useSupabase && supabaseClient) {
                 try {
-                    // Cek jika field input berupa format email
                     const isEmail = user.includes('@');
-                    const loginEmail = isEmail ? user : `${user}@siblingtours.com`; // Fallback email domain
+                    const loginEmail = isEmail ? user : `${user}@siblingtours.com`;
 
                     const { data, error } = await supabaseClient.auth.signInWithPassword({
                         email: loginEmail,
@@ -2123,22 +2051,19 @@
                         loginSuccessful = true;
                     }
                 } catch (authErr) {
-                    console.warn("Supabase Auth server offline, falling back to secure db parameter checks:", authErr);
+                    console.warn("Supabase Auth fallback to hash checks:", authErr);
                 }
             }
 
-            // 2. Fallback verifikasi secure Hash (Backward-Compatible Encryption Upgrade)
             if (!loginSuccessful) {
                 if (isSha256(savedPass)) {
                     loginSuccessful = (user === AppState.adminUsername && enteredHash === savedPass);
                 } else {
-                    // Backward compatible migration logic (Plaintext -> SHA-256)
                     loginSuccessful = (user === AppState.adminUsername && pass === savedPass);
                     if (loginSuccessful) {
                         AppState.adminPassword = enteredHash;
                         await AppState.save();
                         
-                        // Perbarui data database server jika tersambung
                         if (useSupabase && supabaseClient) {
                             await supabaseClient.from('site_settings').update({ admin_password: enteredHash }).eq('id', 1);
                         }
@@ -2155,7 +2080,6 @@
                 lockoutTime = null;
                 AppState.isAdminAuthenticated = true;
                 
-                // Buat token sesi transien unik (Symmetric Factor Token Verification)
                 const sessionToken = await sha256(user + enteredHash + Date.now().toString());
                 sessionStorage.setItem('ST_ADMIN_AUTH', 'true');
                 sessionStorage.setItem('ST_ADMIN_TOKEN', sessionToken);
@@ -2277,7 +2201,7 @@
             const rows = document.querySelectorAll('#faq-rows > div');
             const newFaqs = [];
             
-            rows.forEach((row, index) => {
+            rows.forEach((row) => {
                 const q = row.querySelector('input').value;
                 const a = row.querySelector('textarea').value;
                 if (q && a) {
@@ -2330,7 +2254,6 @@
 
             try {
                 if (useSupabase && supabaseClient) {
-                    // Cek terlebih dahulu apakah baris id=1 sudah ada di database cloud
                     const { data: checkData, error: checkError } = await supabaseClient
                         .from('site_settings')
                         .select('id')
@@ -2340,7 +2263,6 @@
                     if (checkError) throw checkError;
 
                     if (!checkData) {
-                        // Jika baris belum ada, lakukan inisialisasi upsert lengkap dengan kredensial aman
                         const { error: upsertError } = await supabaseClient
                             .from('site_settings')
                             .upsert({
@@ -2358,7 +2280,6 @@
                             });
                         if (upsertError) throw upsertError;
                     } else {
-                        // Jika sudah ada, update kolom informasi umum saja agar kredensial admin tetap terlindungi
                         const { error: updateError } = await supabaseClient
                             .from('site_settings')
                             .update({
@@ -2379,10 +2300,8 @@
                     await AppState.save();
                 }
 
-                // Selalu perbarui memory state agar sinkron seketika
                 AppState.site = siteUpdates;
 
-                // Re-render Header, Footer, dan WhatsApp Floating Link secara real-time di layar browser
                 document.getElementById('header-container').innerHTML = Components.Header();
                 document.getElementById('footer-container').innerHTML = Components.Footer();
                 const cleanWa = window.getCleanWhatsAppNumber(AppState.site.whatsapp);
@@ -2404,7 +2323,6 @@
             const newUsername = document.getElementById('sec-username').value;
             const newPass = document.getElementById('sec-new-pass').value;
 
-            // Verifikasi secure SHA-256 Hash
             const oldPassHash = await sha256(oldPass);
             const savedPass = AppState.adminPassword;
             let oldPassValid = false;
@@ -2427,7 +2345,7 @@
 
             const confirmed = await showConfirm(
                 'Perbarui Kredensial',
-                'Apakah Anda yakin ingin mengganti Username dan Password login dasbor admin Anda dengan tingkat pengamanan enkripsi cryptographic baru?'
+                'Apakah Anda yakin ingin mengganti Username dan Password login dasbor admin Anda?'
             );
 
             if (confirmed) {
@@ -2661,6 +2579,148 @@
             box.select();
             document.execCommand('copy');
             showToast('Seluruh data JSON disalin ke papan klip!', 'success');
+        };
+
+        // Custom Toast Notification Maker (Sistem Auto-Destroy Mulus)
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const bgClass = type === 'success' ? 'bg-emerald-500' : (type === 'info' ? 'bg-blue-500' : 'bg-red-500');
+            const iconClass = type === 'success' ? 'ph-check-circle' : (type === 'info' ? 'ph-info' : 'ph-warning');
+            
+            const toast = document.createElement('div');
+            toast.className = `${bgClass} text-white px-5 py-4 rounded-2xl shadow-xl flex items-center gap-3 animate-fade-in-up max-w-sm pointer-events-auto transition-all duration-500 transform translate-y-0 opacity-100`;
+            toast.innerHTML = `
+                <i class="ph ${iconClass} text-2xl shrink-0"></i>
+                <div class="text-sm font-semibold">${message}</div>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-4');
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        const App = {
+            root: document.getElementById('app-root'),
+            header: document.getElementById('header-container'),
+            footer: document.getElementById('footer-container'),
+            loader: document.getElementById('loader'),
+
+            async init() {
+                await AppState.init();
+
+                this.header.innerHTML = Components.Header();
+                this.footer.innerHTML = Components.Footer();
+                
+                const cleanWa = window.getCleanWhatsAppNumber(AppState.site.whatsapp);
+                document.getElementById('floating-wa').href = `https://wa.me/${cleanWa}?text=Halo Sibling Tours, saya ingin menanyakan tentang paket tour premium ke Labuan Bajo.`;
+
+                window.addEventListener('hashchange', () => this.handleRoute());
+                window.addEventListener('scroll', this.handleScroll);
+                this.setupMobileMenu();
+
+                this.handleRoute();
+
+                setTimeout(() => {
+                    this.loader.style.opacity = '0';
+                    setTimeout(() => this.loader.style.display = 'none', 500);
+                }, 800);
+            },
+
+            async handleRoute() {
+                const hash = window.location.hash.slice(1) || 'home';
+                const parts = hash.split('/');
+                const route = parts[0];
+                const param = parts[1];
+
+                window.scrollTo({ top: 0, behavior: 'auto' });
+
+                if (route === 'home') {
+                    this.header.classList.add('header-transparent');
+                    this.header.classList.remove('header-scrolled', 'bg-white', 'text-primary', 'shadow-md');
+                } else {
+                    this.header.classList.remove('header-transparent');
+                    this.header.classList.add('bg-white', 'text-primary', 'shadow-md');
+                }
+
+                document.getElementById('mobile-menu').classList.add('translate-x-full');
+
+                let html = '';
+                switch (route) {
+                    case 'home': html = Views.Home(); break;
+                    case 'tours': html = Views.Tours(); break;
+                    case 'tour': html = Views.TourDetails(param); break;
+                    case 'booking': html = Views.Booking(param); break;
+                    case 'gallery': html = Views.Gallery(); break;
+                    case 'about': html = Views.About(); break;
+                    case 'contact': html = Views.Contact(); break;
+                    case 'admin': 
+                        html = AppState.isAdminAuthenticated ? AdminView.Dashboard() : AdminView.Login(); 
+                        break;
+                    default: html = Views.NotFound(); break;
+                }
+
+                this.root.innerHTML = html;
+                
+                // Initialize Pricing on Booking form instantly if selected
+                if(route === 'booking') {
+                    setTimeout(() => {
+                        window.updateLivePricing();
+                    }, 50);
+                }
+
+                // Sinkronisasi Header Navbar
+                this.header.innerHTML = Components.Header();
+                this.setupMobileMenu();
+                
+                // Pemicu dynamic translations
+                await translatePageDynamicContent();
+                
+                setTimeout(() => this.initScrollAnimations(), 100);
+            },
+
+            handleScroll() {
+                const header = document.getElementById('header-container');
+                const isHome = window.location.hash === '' || window.location.hash === '#home';
+                
+                if (isHome) {
+                    if (window.scrollY > 50) {
+                        header.classList.add('header-scrolled');
+                        header.classList.remove('header-transparent');
+                    } else {
+                        header.classList.remove('header-scrolled');
+                        header.classList.add('header-transparent');
+                    }
+                }
+            },
+
+            setupMobileMenu() {
+                const btn = document.getElementById('mobile-menu-btn');
+                const closeBtn = document.getElementById('close-menu-btn');
+                const menu = document.getElementById('mobile-menu');
+                
+                if (btn && closeBtn && menu) {
+                    btn.addEventListener('click', () => menu.classList.remove('translate-x-full'));
+                    closeBtn.addEventListener('click', () => menu.classList.add('translate-x-full'));
+                }
+            },
+
+            initScrollAnimations() {
+                const reveals = document.querySelectorAll('.reveal');
+                if(!reveals.length) return;
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('active');
+                        }
+                    });
+                }, { threshold: 0.1 });
+
+                reveals.forEach(el => observer.observe(el));
+            }
         };
 
         // Boot the App
