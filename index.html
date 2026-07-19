@@ -674,7 +674,7 @@
                             <i class="ph ph-compass text-accent text-3xl"></i>
                             ${AppState.site.logo}
                         </a>
-                        <p class="text-gray-400 text-sm mb-6">${AppState.site.aboutSnippet}</p>
+                        <p class="text-gray-400 text-sm mb-6 translate-dynamic">${AppState.site.aboutSnippet}</p>
                         <div class="flex gap-4">
                             <a href="${AppState.site.socials.instagram}" class="text-gray-400 hover:text-accent text-2xl transition"><i class="ph ph-instagram-logo"></i></a>
                             <a href="${AppState.site.socials.facebook}" class="text-gray-400 hover:text-accent text-2xl transition"><i class="ph ph-facebook-logo"></i></a>
@@ -720,14 +720,14 @@
                     </div>
                     <div class="p-6 flex flex-col flex-grow">
                         <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-lg font-bold text-dark group-hover:text-primary transition-colors line-clamp-2">${tour.title}</h3>
+                            <h3 class="text-lg font-bold text-dark group-hover:text-primary transition-colors line-clamp-2 translate-dynamic">${tour.title}</h3>
                         </div>
                         <div class="flex items-center gap-1 text-yellow-400 text-sm mb-4">
                             <i class="ph-fill ph-star"></i>
                             <span class="text-dark font-semibold ml-1">${tour.rating || '5.0'}</span>
                             <span class="text-gray-400">(${tour.reviews || '0'} reviews)</span>
                         </div>
-                        <p class="text-gray-500 text-sm mb-6 line-clamp-2 flex-grow">${tour.description}</p>
+                        <p class="text-gray-500 text-sm mb-6 line-clamp-2 flex-grow translate-dynamic">${tour.description}</p>
                         <div class="flex items-center justify-between border-t border-gray-100 pt-4 mt-auto">
                             <div>
                                 <span class="text-[10px] text-gray-400 block uppercase tracking-wider">Start From</span>
@@ -747,7 +747,7 @@
                         <div class="flex gap-1 text-accent mb-4 text-xl">
                             ${Array(parseInt(review.rating) || 5).fill('<i class="ph-fill ph-star"></i>').join('')}
                         </div>
-                        <p class="text-gray-600 italic mb-6">"${review.text}"</p>
+                        <p class="text-gray-600 italic mb-6 translate-dynamic">"${review.text}"</p>
                     </div>
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xl uppercase shrink-0">
@@ -755,7 +755,7 @@
                         </div>
                         <div>
                             <h4 class="font-bold text-dark text-sm">${review.name}</h4>
-                            <p class="text-xs text-gray-400 uppercase tracking-wider">${review.country}</p>
+                            <p class="text-xs text-gray-400 uppercase tracking-wider translate-dynamic">${review.country}</p>
                         </div>
                     </div>
                 </div>
@@ -772,8 +772,8 @@
                         <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
                     </div>
                     <div class="relative z-10 text-center px-6 text-white max-w-4xl mx-auto animate-fade-in-up">
-                        <h1 class="text-4xl md:text-7xl font-extrabold mb-6 tracking-tight leading-tight">${AppState.hero.title}</h1>
-                        <p class="text-lg md:text-2xl mb-10 font-light text-gray-200 leading-relaxed">${AppState.hero.subtitle}</p>
+                        <h1 class="text-4xl md:text-7xl font-extrabold mb-6 tracking-tight leading-tight translate-dynamic">${AppState.hero.title}</h1>
+                        <p class="text-lg md:text-2xl mb-10 font-light text-gray-200 leading-relaxed translate-dynamic">${AppState.hero.subtitle}</p>
                         <a href="${AppState.hero.ctaLink}" class="inline-block bg-accent text-primary px-8 py-4 rounded-full text-lg font-bold hover:bg-white hover:scale-105 transition-all shadow-lg shadow-accent/20">
                             ${t('heroCta')}
                         </a>
@@ -804,7 +804,7 @@
                         <div class="grid md:grid-cols-2 gap-16 items-center">
                             <div class="reveal">
                                 <h2 class="text-3xl md:text-5xl font-bold mb-6">${t('whyUsTitle')}</h2>
-                                <p class="text-gray-300 mb-8 leading-relaxed">${AppState.site.aboutSnippet}</p>
+                                <p class="text-gray-300 mb-8 leading-relaxed translate-dynamic">${AppState.site.aboutSnippet}</p>
                                 <ul class="space-y-4 text-gray-200 font-medium">
                                     <li class="flex items-center gap-3"><i class="ph-fill ph-check-circle text-accent text-xl"></i> ${t('whyUsFeature1')}</li>
                                     <li class="flex items-center gap-3"><i class="ph-fill ph-check-circle text-accent text-xl"></i> ${t('whyUsFeature2')}</li>
@@ -877,10 +877,10 @@
                             <div class="bg-accent text-primary text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wide inline-block mb-4">
                                 ${tour.category}
                             </div>
-                            <h1 class="text-3xl md:text-5xl font-bold mb-4">${tour.title}</h1>
+                            <h1 class="text-3xl md:text-5xl font-bold mb-4 translate-dynamic">${tour.title}</h1>
                             <div class="flex flex-wrap gap-6 text-sm text-gray-200">
                                 <span class="flex items-center gap-2"><i class="ph ph-clock text-accent text-xl"></i> ${tour.duration}</span>
-                                <span class="flex items-center gap-2"><i class="ph ph-map-pin text-accent text-xl"></i> ${tour.location}</span>
+                                <span class="flex items-center gap-2 translate-dynamic"><i class="ph ph-map-pin text-accent text-xl"></i> ${tour.location}</span>
                                 <span class="flex items-center gap-2"><i class="ph-fill ph-star text-accent text-xl"></i> ${tour.rating || '5.0'} (${tour.reviews || '0'} reviews)</span>
                             </div>
                         </div>
@@ -890,14 +890,14 @@
                         <div class="container mx-auto px-6 flex flex-col lg:flex-row gap-12">
                             <div class="w-full lg:w-2/3">
                                 <h3 class="text-2xl font-bold text-primary mb-6 border-b pb-2">${t('detailsDescription')}</h3>
-                                <p class="text-gray-600 mb-10 leading-relaxed text-lg">${tour.description}</p>
+                                <p class="text-gray-600 mb-10 leading-relaxed text-lg translate-dynamic">${tour.description}</p>
                                 
                                 <h3 class="text-2xl font-bold text-primary mb-6 border-b pb-2">${t('detailsHighlights')}</h3>
                                 <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
                                     ${tour.highlights.split(',').map(h => `
                                         <li class="flex items-center gap-3 text-gray-700 bg-light p-4 rounded-xl border border-gray-100">
                                             <i class="ph-fill ph-check-circle text-secondary text-xl shrink-0"></i> 
-                                            <span>${h.trim()}</span>
+                                            <span class="translate-dynamic">${h.trim()}</span>
                                         </li>
                                     `).join('')}
                                 </ul>
@@ -911,8 +911,8 @@
                                         return `
                                             <div class="relative pb-2">
                                                 <div class="absolute -left-[25px] top-1.5 w-3 h-3 bg-secondary rounded-full"></div>
-                                                <h4 class="text-lg font-bold text-dark mb-1">${title.trim()}</h4>
-                                                ${desc ? `<p class="text-gray-600 text-sm leading-relaxed">${desc.trim()}</p>` : ''}
+                                                <h4 class="text-lg font-bold text-dark mb-1 translate-dynamic">${title.trim()}</h4>
+                                                ${desc ? `<p class="text-gray-600 text-sm leading-relaxed translate-dynamic">${desc.trim()}</p>` : ''}
                                             </div>
                                         `;
                                     }).join('')}
@@ -924,7 +924,7 @@
                                             <i class="ph ph-plus-circle text-green-500"></i> ${t('detailsIncluded')}
                                         </h3>
                                         <ul class="space-y-2.5 text-gray-600 text-sm">
-                                            ${tour.included.split(',').map(i => `<li class="flex items-start gap-2"><i class="ph ph-check text-green-500 mt-1"></i> <span>${i.trim()}</span></li>`).join('')}
+                                            ${tour.included.split(',').map(i => `<li class="flex items-start gap-2"><i class="ph ph-check text-green-500 mt-1"></i> <span class="translate-dynamic">${i.trim()}</span></li>`).join('')}
                                         </ul>
                                     </div>
                                     <div>
@@ -932,7 +932,7 @@
                                             <i class="ph ph-minus-circle text-red-500"></i> ${t('detailsExcluded')}
                                         </h3>
                                         <ul class="space-y-2.5 text-gray-600 text-sm">
-                                            ${tour.excluded.split(',').map(e => `<li class="flex items-start gap-2"><i class="ph ph-x text-red-500 mt-1"></i> <span>${e.trim()}</span></li>`).join('')}
+                                            ${tour.excluded.split(',').map(e => `<li class="flex items-start gap-2"><i class="ph ph-x text-red-500 mt-1"></i> <span class="translate-dynamic">${e.trim()}</span></li>`).join('')}
                                         </ul>
                                     </div>
                                 </div>
@@ -1098,7 +1098,7 @@
                                         <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-secondary text-2xl shadow-sm shrink-0"><i class="ph ph-map-pin"></i></div>
                                         <div>
                                             <h4 class="font-bold text-dark mb-1">${t('contactAddress')}</h4>
-                                            <p class="text-gray-600 text-sm leading-relaxed">${AppState.site.address}</p>
+                                            <p class="text-gray-600 text-sm leading-relaxed translate-dynamic">${AppState.site.address}</p>
                                         </div>
                                     </div>
                                     <div class="flex items-start gap-4">
@@ -1143,10 +1143,10 @@
                             ${AppState.faq.map((item, i) => `
                                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-300">
                                     <button class="w-full text-left px-6 py-5 font-bold text-dark flex justify-between items-center focus:outline-none" onclick="toggleFaq(${i})">
-                                        <span class="pr-4">${item.q}</span>
+                                        <span class="pr-4 translate-dynamic">${item.q}</span>
                                         <i class="ph ph-caret-down transform transition-transform text-secondary text-xl shrink-0" id="faq-icon-${i}"></i>
                                     </button>
-                                    <div class="px-6 pb-6 text-gray-500 text-sm leading-relaxed hidden" id="faq-content-${i}">
+                                    <div class="px-6 pb-6 text-gray-500 text-sm leading-relaxed hidden translate-dynamic" id="faq-content-${i}">
                                         ${item.a}
                                     </div>
                                 </div>
@@ -1620,7 +1620,7 @@
                 }, 800);
             },
 
-            handleRoute() {
+            async handleRoute() {
                 const hash = window.location.hash.slice(1) || 'home';
                 const parts = hash.split('/');
                 const route = parts[0];
@@ -1658,6 +1658,9 @@
                 // Sinkronisasi Header Navbar
                 this.header.innerHTML = Components.Header();
                 this.setupMobileMenu();
+                
+                // Trigger dynamic translations after DOM is rendered
+                await translatePageDynamicContent();
                 
                 setTimeout(() => this.initScrollAnimations(), 100);
             },
@@ -1751,6 +1754,70 @@
             showToast(lang === 'en' ? 'Language switched to English' : 'Bahasa diganti ke Indonesia', 'success');
             App.handleRoute();
         };
+
+        // =========================================================================
+        // AUTOMATIC TRANSLATION ENGINE LOGIC (Indonesian -> English)
+        // =========================================================================
+        const TranslationCache = {
+            get(text, targetLang) {
+                const cache = JSON.parse(localStorage.getItem('ST_TRANS_CACHE') || '{}');
+                return cache[`${text}_${targetLang}`] || null;
+            },
+            set(text, targetLang, translatedText) {
+                const cache = JSON.parse(localStorage.getItem('ST_TRANS_CACHE') || '{}');
+                cache[`${text}_${targetLang}`] = translatedText;
+                localStorage.setItem('ST_TRANS_CACHE', JSON.stringify(cache));
+            }
+        };
+
+        async function fetchTranslation(text, from = 'id', to = 'en') {
+            if (!text || text.trim() === '') return '';
+            const trimmedText = text.trim();
+            const cached = TranslationCache.get(trimmedText, to);
+            if (cached) return cached;
+
+            try {
+                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmedText)}&langpair=${from}|${to}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data && data.responseData && data.responseData.translatedText) {
+                    const translated = data.responseData.translatedText;
+                    TranslationCache.set(trimmedText, to, translated);
+                    return translated;
+                }
+                return trimmedText; 
+            } catch (err) {
+                console.warn("Translation API error:", err);
+                return trimmedText; 
+            }
+        }
+
+        async function translatePageDynamicContent() {
+            const elements = document.querySelectorAll('.translate-dynamic');
+            const targetLang = AppState.lang; 
+            
+            for (const el of elements) {
+                if (!el.hasAttribute('data-original-text')) {
+                    el.setAttribute('data-original-text', el.innerText.trim());
+                }
+                
+                const originalText = el.getAttribute('data-original-text');
+                
+                if (targetLang === 'id') {
+                    el.innerText = originalText;
+                } else if (targetLang === 'en') {
+                    const isCached = TranslationCache.get(originalText, 'en');
+                    if (!isCached) {
+                        el.classList.add('opacity-50', 'animate-pulse');
+                    }
+                    
+                    const translated = await fetchTranslation(originalText, 'id', 'en');
+                    
+                    el.innerText = translated;
+                    el.classList.remove('opacity-50', 'animate-pulse');
+                }
+            }
+        }
 
         window.addEventListener('click', (e) => {
             if (!e.target.closest('#lang-dropdown') && !e.target.closest('button[onclick="toggleLangDropdown()"]')) {
