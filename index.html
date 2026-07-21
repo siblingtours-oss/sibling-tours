@@ -451,7 +451,9 @@
         window.getCleanWhatsAppNumber = (num) => {
             if (!num) return "";
             let clean = num.replace(/[^0-9]/g, ''); // Ambil hanya karakter angka
-            if (clean.startsWith('0')) {
+            
+            // Cek apakah kemungkinan ini nomor lokal Indonesia (dimulai dengan 0 dan panjangnya standar)
+            if (clean.startsWith('0') && clean.length >= 10 && clean.length <= 13) {
                 clean = '62' + clean.slice(1); // Ubah awalan 08... menjadi format internasional 628...
             }
             return clean;
@@ -465,7 +467,6 @@
             let schemaData = null;
 
             if (route === 'home' || route === '' || !route) {
-                // Main Organization / Travel Agency Schema
                 schemaData = {
                     "@context": "https://schema.org",
                     "@type": "TravelAgency",
@@ -490,7 +491,6 @@
                     ].filter(Boolean)
                 };
             } else if (route === 'tour' && param) {
-                // Tour Package Schema mapped as Product for Rich Snippets (Stars & Prices in Google Search)
                 const tour = AppState.tours.find(t => t.id === param);
                 if (tour) {
                     const isUSD = tour.price.includes('$');
@@ -991,7 +991,7 @@
                 return `
                     <section class="relative h-[60vh] flex items-end pb-16">
                         <div class="absolute inset-0 z-0">
-                            <img src="${tour.thumbnail}" alt="${tour.title}" onerror="this.src='https://placehold.co/1200x600/0A4D68/FFF?text=Tour+Banner'" class="w-full h-full object-cover">
+                            <img src="${tour.thumbnail}" alt="${tour.title}" loading="lazy" onerror="this.src='https://placehold.co/1200x600/0A4D68/FFF?text=Tour+Banner'" class="w-full h-full object-cover">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
                         </div>
                         <div class="container mx-auto px-6 relative z-10 text-white animate-fade-in-up">
@@ -1175,7 +1175,7 @@
                                         <textarea id="b-notes" rows="4" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition" placeholder="Alergi makanan, request penjemputan..."></textarea>
                                     </div>
 
-                                    <button type="submit" class="w-full bg-accent text-primary py-4 rounded-xl font-bold text-lg hover:bg-yellow-400 transition-colors shadow-lg flex items-center justify-center gap-2">
+                                    <button type="submit" id="btn-submit-booking" class="w-full bg-accent text-primary py-4 rounded-xl font-bold text-lg hover:bg-yellow-400 transition-colors shadow-lg flex items-center justify-center gap-2">
                                         <i class="ph ph-file-pdf text-2xl"></i> ${t('formSubmit')}
                                     </button>
                                 </form>
@@ -2020,6 +2020,13 @@
         window.handleBookingFormSubmit = async (event) => {
             event.preventDefault();
             
+            const submitBtn = document.getElementById('btn-submit-booking');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<i class="ph ph-spinner animate-spin text-2xl"></i> Memproses...`;
+                submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            }
+            
             const name = document.getElementById('b-name').value;
             const email = document.getElementById('b-email').value;
             const phone = document.getElementById('b-phone').value;
@@ -2078,12 +2085,25 @@
                     const cleanWa = window.getCleanWhatsAppNumber(AppState.site.whatsapp);
                     const waUrl = `https://wa.me/${cleanWa}?text=${message}`;
                     window.open(waUrl, '_blank');
+                    
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = `<i class="ph ph-file-pdf text-2xl"></i> ${t('formSubmit')}`;
+                        submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                    }
+                    
                     window.location.hash = '#home';
                 }, 2000);
 
             } catch (err) {
                 console.error(err);
                 showToast('Gagal mengirim data booking, periksa koneksi Anda.', 'error');
+                
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<i class="ph ph-file-pdf text-2xl"></i> ${t('formSubmit')}`;
+                    submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                }
             }
         };
 
