@@ -138,13 +138,10 @@
 </head>
 <body>
 
-    <!-- Loader Screen -->
     <div id="loader"><div class="spinner"></div></div>
 
-    <!-- Custom Toast Notification Box -->
     <div id="toast-container" class="fixed top-24 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
-    <!-- Custom Confirmation Modal (Replacing window.confirm) -->
     <div id="confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl animate-zoom-in text-center border border-gray-100">
             <div class="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-3xl">
@@ -159,20 +156,17 @@
         </div>
     </div>
 
-    <!-- Layout Wrapper -->
     <header id="header-container" class="fixed w-full top-0 z-50 transition-all duration-300 header-transparent"></header>
     
     <main id="app-root" class="min-h-screen"></main>
     
     <footer id="footer-container" class="bg-dark text-white pt-16 pb-8"></footer>
 
-    <!-- WhatsApp Floating Action Button -->
     <a href="#" id="floating-wa" target="_blank" class="fixed bottom-6 right-6 bg-[#25D366] text-white p-4 rounded-full shadow-lg hover:scale-110 transition-transform z-40 flex items-center justify-center">
         <i class="ph-fill ph-whatsapp-logo text-3xl"></i>
     </a>
 
     <script>
-        // DATA DICTIONARY MULTI-BAHASA (Localization Layer)
         const TRANSLATIONS = {
             id: {
                 navHome: "Home",
@@ -312,13 +306,11 @@
             }
         };
 
-        // Helper global untuk pelokalan teks
         window.t = (key) => {
             const lang = AppState.lang || 'id';
             return TRANSLATIONS[lang][key] || TRANSLATIONS['id'][key] || key;
         };
 
-        // Data Default (Sebelum ditarik dari database cloud atau LocalStorage)
         const DEFAULT_SITE = {
             name: "Sibling Tours",
             tagline: "Premium Labuan Bajo Experiences",
@@ -423,43 +415,41 @@
             { name: "Dewi Lestari", role: "Customer Service & Booking Operations", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300" }
         ];
 
-        // KREDENSIAL SUPABASE (Masukkan API Keys Proyek Anda di Sini)
         const SUPABASE_URL = ""; 
         const SUPABASE_KEY = ""; 
 
         let supabaseClient = null;
         let useSupabase = false;
 
-        // Inisialisasi Klien Supabase jika Kredensial Valid
         if (SUPABASE_URL && SUPABASE_KEY && !SUPABASE_URL.startsWith("ISI_DENGAN_")) {
             try {
                 supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
                 if (supabaseClient) {
                     useSupabase = true;
-                    console.log("Database: Cloud Supabase berhasil tersambung.");
                 }
             } catch (err) {
-                console.warn("Koneksi Supabase gagal, menggunakan LocalStorage fallback:", err);
+                console.warn("Supabase connection fallback:", err);
             }
         }
 
-        // --- SISTEM PERTAHANAN LOGIN BRUTE FORCE & LOCKED OUT ---
         let loginAttempts = 0;
         let lockoutTime = null;
 
-        // Utility to clean phone number to international WhatsApp format
         window.getCleanWhatsAppNumber = (num) => {
             if (!num) return "";
-            let clean = num.replace(/[^0-9]/g, ''); // Ambil hanya karakter angka
-            
-            // Cek apakah kemungkinan ini nomor lokal Indonesia (dimulai dengan 0 dan panjangnya standar)
-            if (clean.startsWith('0') && clean.length >= 10 && clean.length <= 13) {
-                clean = '62' + clean.slice(1); // Ubah awalan 08... menjadi format internasional 628...
+            const trimmed = num.trim();
+            // Jika ada kode negara dengan +, jangan ubah secara manual (dukungan internasional)
+            if (trimmed.startsWith('+')) {
+                return trimmed.replace(/[^0-9]/g, '');
+            }
+            let clean = trimmed.replace(/[^0-9]/g, '');
+            // Mengubah awalan 08 lokal Indonesia menjadi 628...
+            if (clean.startsWith('08') && clean.length >= 10 && clean.length <= 13) {
+                clean = '62' + clean.slice(1);
             }
             return clean;
         };
 
-        // Dynamic JSON-LD Schema Generator for International SEO Boost
         window.updateJSONLDSchema = (route, param) => {
             const existingSchema = document.getElementById('dynamic-json-ld');
             if (existingSchema) existingSchema.remove();
@@ -529,7 +519,6 @@
             }
         };
 
-        // Hash SHA-256 Utility untuk Native Web Crypto API (Sandi Terenkripsi)
         async function sha256(message) {
             const msgBuffer = new TextEncoder().encode(message);
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -537,15 +526,12 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        // Check format Hash SHA-256
         function isSha256(str) {
             return typeof str === 'string' && str.length === 64 && /^[0-9a-fA-F]+$/.test(str);
         }
 
-        // Default SHA-256 hash untuk "admin123"
         const DEFAULT_PASS_HASH = "24073644934d71597405e3f46f3630f1b204618a8047fd3f5b7194685718a7b0";
 
-        // Custom Promise-based Confirmation Dialog
         window.showConfirm = (title, message, isDanger = true) => {
             return new Promise((resolve) => {
                 const modal = document.getElementById('confirm-modal');
@@ -606,12 +592,10 @@
             adminSessionToken: null,
 
             async init() {
-                // Inisialisasi token & status sesi aman
                 this.adminUsername = localStorage.getItem('ST_ADMIN_USER') || 'admin';
                 this.adminPassword = localStorage.getItem('ST_ADMIN_PASS') || DEFAULT_PASS_HASH;
                 this.lang = localStorage.getItem('ST_LANG') || 'id';
 
-                // Pengamanan Session Tampering
                 const baseAuth = sessionStorage.getItem('ST_ADMIN_AUTH') === 'true';
                 const sessionToken = sessionStorage.getItem('ST_ADMIN_TOKEN');
                 if (baseAuth && sessionToken && sessionToken.length === 64) {
@@ -625,13 +609,11 @@
 
                 if (useSupabase && supabaseClient) {
                     try {
-                        // Ambil Sesi Supabase Auth jika ada
                         const { data: sData } = await supabaseClient.auth.getSession();
                         if (sData && sData.session) {
                             this.isAdminAuthenticated = true;
                         }
 
-                        // 1. Ambil Pengaturan Website
                         const { data: siteData, error: siteErr } = await supabaseClient.from('site_settings').select('*').eq('id', 1).maybeSingle();
                         if (siteData && !siteErr) {
                             this.site = {
@@ -656,7 +638,6 @@
                             this.site = DEFAULT_SITE;
                         }
 
-                        // 2. Ambil Paket Wisata (Tours)
                         const { data: toursData, error: toursErr } = await supabaseClient.from('tours').select('*').order('created_at', { ascending: true });
                         if (toursData && !toursErr) {
                             this.tours = toursData;
@@ -664,7 +645,6 @@
                             this.tours = DEFAULT_TOURS;
                         }
 
-                        // 3. Ambil Galeri Foto Cloud
                         const { data: galleryData, error: galErr } = await supabaseClient.from('gallery').select('*').order('id', { ascending: false });
                         if (galleryData && !galErr) {
                             this.gallery = galleryData;
@@ -672,7 +652,6 @@
                             this.gallery = JSON.parse(localStorage.getItem('ST_GALLERY')) || DEFAULT_GALLERY;
                         }
 
-                        // 4. Ambil FAQs
                         const { data: faqData, error: faqErr } = await supabaseClient.from('faqs').select('*').order('id', { ascending: true });
                         if (faqData && !faqErr) {
                             this.faq = faqData;
@@ -680,8 +659,7 @@
                             this.faq = DEFAULT_FAQ;
                         }
 
-                        // 5. Ambil Bookings
-                        const { data: bookingData, error: bookErr } = await supabaseClient.from('bookings').select('*').order('created_at', { descending: true });
+                        const { data: bookingData, error: bookErr } = await supabaseClient.from('bookings').select('*').order('created_at', { ascending: false });
                         if (bookingData && !bookErr) {
                             this.bookings = bookingData;
                         } else {
@@ -689,14 +667,13 @@
                         }
 
                     } catch (error) {
-                        console.error("Terjadi kegagalan penarikan data dari Supabase:", error);
+                        console.warn("Supabase fetch warning, falling back to local storage:", error);
                         this.loadLocalFallback();
                     }
                 } else {
                     this.loadLocalFallback();
                 }
 
-                // Pengaturan Hero, Testimoni, & Tim Cadangan Tetap Lokal
                 this.hero = JSON.parse(localStorage.getItem('ST_HERO')) || DEFAULT_HERO;
                 this.testimonials = JSON.parse(localStorage.getItem('ST_TESTIMONIALS')) || DEFAULT_TESTIMONIALS;
                 this.team = JSON.parse(localStorage.getItem('ST_TEAM')) || DEFAULT_TEAM;
@@ -737,7 +714,6 @@
                         <i class="ph ph-compass text-accent text-3xl"></i>
                         ${AppState.site.logo}
                     </a>
-                    <!-- Desktop Nav -->
                     <nav class="hidden md:flex gap-6 items-center font-medium">
                         <a href="#home" class="nav-link hover:text-accent transition-colors">${t('navHome')}</a>
                         <a href="#about" class="nav-link hover:text-accent transition-colors">${t('navAbout')}</a>
@@ -745,7 +721,6 @@
                         <a href="#gallery" class="nav-link hover:text-accent transition-colors">${t('navGallery')}</a>
                         <a href="#contact" class="nav-link hover:text-accent transition-colors">${t('navContact')}</a>
                         
-                        <!-- Multi-Language Dropdown Switcher -->
                         <div class="relative inline-block text-left">
                             <button onclick="toggleLangDropdown()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-300 text-xs font-semibold hover:bg-gray-100/10 transition nav-link">
                                 <i class="ph ph-globe text-sm"></i> ${AppState.lang.toUpperCase()}
@@ -766,12 +741,10 @@
                         
                         <a href="#tours" class="bg-accent text-primary px-6 py-2 rounded-full font-semibold hover:bg-white transition-all shadow-md">${t('navBookNow')}</a>
                     </nav>
-                    <!-- Mobile Menu Button -->
                     <button id="mobile-menu-btn" class="md:hidden nav-link text-3xl">
                         <i class="ph ph-list"></i>
                     </button>
                 </div>
-                <!-- Mobile Nav Overlay -->
                 <div id="mobile-menu" class="fixed inset-0 bg-primary/95 backdrop-blur-md text-white flex flex-col justify-center items-center gap-6 text-2xl font-medium transform translate-x-full transition-transform duration-300 z-50">
                     <button id="close-menu-btn" class="absolute top-6 right-6 text-4xl hover:text-accent"><i class="ph ph-x"></i></button>
                     <a href="#home" class="mobile-link hover:text-accent">${t('navHome')}</a>
@@ -885,10 +858,9 @@
 
         const Views = {
             Home: () => `
-                <!-- Fullscreen Hero Section -->
                 <section class="relative h-screen flex items-center justify-center overflow-hidden">
                     <div class="absolute inset-0 z-0">
-                        <img src="${AppState.hero.image}" alt="Hero Background" class="w-full h-full object-cover">
+                        <img src="${AppState.hero.image}" alt="Hero Background" loading="lazy" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-primary/40 mix-blend-multiply"></div>
                         <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
                     </div>
@@ -901,7 +873,6 @@
                     </div>
                 </section>
 
-                <!-- Featured Tours -->
                 <section class="py-24 bg-light" id="tours">
                     <div class="container mx-auto px-6">
                         <div class="text-center mb-16 reveal">
@@ -919,7 +890,6 @@
                     </div>
                 </section>
 
-                <!-- Why Choose Us & Stats -->
                 <section class="py-24 bg-primary text-white">
                     <div class="container mx-auto px-6">
                         <div class="grid md:grid-cols-2 gap-16 items-center">
@@ -954,7 +924,6 @@
                     </div>
                 </section>
 
-                <!-- Testimonials -->
                 <section class="py-24 bg-white">
                     <div class="container mx-auto px-6">
                         <div class="text-center mb-16 reveal">
@@ -1109,11 +1078,11 @@
                                         </div>
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 mb-2">${t('formPhone')}</label>
-                                            <input type="tel" id="b-phone" placeholder="e.g. 0812345678" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                                            <input type="tel" id="b-phone" placeholder="e.g. 0812345678 or +614123456" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
                                         </div>
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 mb-2">${t('formCountry')}</label>
-                                            <input type="text" id="b-country" required placeholder="Indonesia, Malaysia, dll" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
+                                            <input type="text" id="b-country" required placeholder="Indonesia, Australia, dll" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition">
                                         </div>
                                     </div>
                                     
@@ -1145,7 +1114,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- REAL-TIME PRICE CALCULATOR BREAKDOWN -->
                                     <div class="bg-gray-50 p-6 rounded-2xl border border-gray-200 space-y-3">
                                         <h4 class="font-bold text-primary text-sm uppercase tracking-wider translate-dynamic">Rincian Transparansi Biaya</h4>
                                         <div class="flex justify-between text-sm text-gray-600">
@@ -1288,7 +1256,6 @@
                     </div>
                 </section>
                 
-                <!-- FAQs Accordion Section -->
                 <section class="py-24 bg-light" id="faq">
                     <div class="container mx-auto px-6 max-w-3xl reveal active">
                         <div class="text-center mb-12">
@@ -1370,7 +1337,6 @@
                             </div>
 
                             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                                <!-- Sidebar Kontrol -->
                                 <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-2 h-fit text-sm font-bold">
                                     <button onclick="renderAdminTab('tours')" class="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 transition ${activeTab === 'tours' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-light'}">
                                         <i class="ph ph-package text-lg"></i> ${t('adminTabTours')}
@@ -1395,7 +1361,6 @@
                                     </button>
                                 </div>
 
-                                <!-- Konten Editor Utama -->
                                 <div class="lg:col-span-3 bg-white p-6 md:p-8 rounded-2xl border border-gray-200 shadow-sm">
                                     ${AdminView.RenderTabContent(activeTab)}
                                 </div>
@@ -1457,7 +1422,6 @@
                     </table>
                 </div>
 
-                <!-- Form Modal Kustom Tambah/Edit Tour -->
                 <div id="tour-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
                     <div class="bg-white rounded-3xl max-w-3xl w-full h-[85vh] flex flex-col shadow-2xl animate-zoom-in">
                         <div class="p-6 border-b flex justify-between items-center">
@@ -1606,7 +1570,6 @@
                     `).join('')}
                 </div>
 
-                <!-- Form Modal Tambah Galeri -->
                 <div id="gallery-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
                     <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl animate-zoom-in">
                         <div class="p-6 border-b flex justify-between items-center">
@@ -1835,23 +1798,20 @@
             }
         });
 
-        // PDF Invoice Generator
         window.generatePDFInvoice = (booking) => {
             try {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-                const primaryColor = [10, 77, 104]; // #0A4D68
-                const secondaryColor = [8, 131, 149]; // #088395
-                const accentColor = [255, 209, 102]; // #FFD166
-                const darkText = [15, 23, 42]; // #0F172A
-                const lightText = [100, 116, 139]; // Slate
+                const primaryColor = [10, 77, 104];
+                const secondaryColor = [8, 131, 149];
+                const accentColor = [255, 209, 102];
+                const darkText = [15, 23, 42];
+                const lightText = [100, 116, 139];
 
-                // Banner Header
                 doc.setFillColor(...primaryColor);
                 doc.rect(0, 0, 210, 40, 'F');
 
-                // Header Teks
                 doc.setTextColor(255, 255, 255);
                 doc.setFont('Helvetica', 'bold');
                 doc.setFontSize(22);
@@ -1862,7 +1822,6 @@
                 doc.text('Premium Labuan Bajo Experiences', 15, 24);
                 doc.text('hello@siblingtours.com | +62 812 3797 3414', 15, 29);
 
-                // Label Invoice
                 doc.setFont('Helvetica', 'bold');
                 doc.setFontSize(16);
                 doc.setTextColor(...accentColor);
@@ -1874,7 +1833,6 @@
                 doc.text(`ID: #${booking.id}`, 135, 24);
                 doc.text(`Date: ${booking.date}`, 135, 29);
 
-                // Guest Details
                 doc.setTextColor(...darkText);
                 doc.setFont('Helvetica', 'bold');
                 doc.setFontSize(12);
@@ -1899,13 +1857,11 @@
                 doc.text(booking.phone, 45, 77);
                 doc.text(booking.country, 45, 83);
 
-                // Tour & Cost Detail
                 doc.setFont('Helvetica', 'bold');
                 doc.setFontSize(12);
                 doc.text('RESERVATION DETAILS', 15, 100);
                 doc.line(15, 103, 195, 103);
 
-                // Table Header
                 doc.setFillColor(248, 250, 252);
                 doc.rect(15, 108, 180, 8, 'F');
                 doc.setFontSize(9);
@@ -1915,11 +1871,9 @@
                 doc.text('Guests', 145, 113.5);
                 doc.text('Total Cost', 170, 113.5);
 
-                // Table Content Rows
                 doc.setFont('Helvetica', 'normal');
                 doc.setTextColor(...darkText);
                 
-                // Detailed parsing of cabin choice
                 const cabinChoice = booking.cabin || "Shared Cabin";
                 const displayTourAndCabin = [booking.tour, `Cabin: ${cabinChoice}`];
                 
@@ -1932,14 +1886,12 @@
                 doc.text(totalFormatted, 170, 122);
                 doc.line(15, 138, 195, 138);
 
-                // Cost Breakdown Subtable
                 doc.setFont('Helvetica', 'normal');
                 doc.setFontSize(8.5);
                 doc.setTextColor(...lightText);
                 doc.text(`Base Price per Pax: Rp ${(booking.basePrice || 0).toLocaleString('id-ID')}`, 15, 144);
                 doc.text(`Cabin Surcharge per Pax: Rp ${(booking.surcharge || 0).toLocaleString('id-ID')}`, 15, 149);
 
-                // Payment Instructions
                 doc.setFont('Helvetica', 'bold');
                 doc.setFontSize(11);
                 doc.setTextColor(...primaryColor);
@@ -1960,7 +1912,6 @@
                 doc.text('No Rekening: 091-234-5678', 20, 184);
                 doc.text('Atas Nama: Sibling Tours Labuan Bajo', 20, 189);
 
-                // Notice
                 doc.setFont('Helvetica', 'bold');
                 doc.setTextColor(239, 68, 68);
                 doc.text('CATATAN PENTING:', 15, 202);
@@ -1979,7 +1930,6 @@
                 doc.setTextColor(...primaryColor);
                 doc.text('Thank you for choosing Sibling Tours. Your luxury tropical adventure awaits!', 105, 268, { align: 'center' });
 
-                // Download File
                 doc.save(`SiblingTours_Invoice_${booking.id}.pdf`);
                 return true;
             } catch (error) {
@@ -1988,7 +1938,6 @@
             }
         };
 
-        // Live Price Calculations
         window.updateLivePricing = () => {
             const tourSelect = document.getElementById('b-tour');
             if(!tourSelect) return;
@@ -2012,11 +1961,9 @@
             document.getElementById('price-guests').innerText = guests + ' Pax';
             document.getElementById('price-grand-total').innerText = 'Rp ' + grandTotal.toLocaleString('id-ID');
 
-            // Store transient pricing details for retrieval upon submit
             window.lastCalculatedPricing = { basePrice, surcharge, grandTotal, guests };
         };
 
-        // Submit Form Booking & Persist Data
         window.handleBookingFormSubmit = async (event) => {
             event.preventDefault();
             
@@ -2077,13 +2024,12 @@
 
                 showToast('Booking tersimpan! Mempersiapkan Invoice PDF...', 'success');
 
-                // Generator PDF Invoice Otomatis
                 generatePDFInvoice(newBooking);
 
                 setTimeout(() => {
-                    const message = `*Konfirmasi Pemesanan Sibling Tours*%0A%0A*ID Pemesanan:* #${newBooking.id}%0A*Nama:* ${name}%0A*Email:* ${email}%0A*WhatsApp:* ${phone}%0A*Kebangsaan:* ${country}%0A*Paket:* ${tour}%0A*Tipe Kabin:* ${cabin}%0A*Tanggal Mulai:* ${date}%0A*Pax:* ${guests} Orang%0A*Catatan:* ${notes}%0A*Total Estimasi:* Rp ${pricing.grandTotal.toLocaleString('id-ID')}%0A%0A_Saya telah mengunduh Invoice PDF resmi dari web dan siap melakukan transfer deposit._`;
+                    const message = `*Konfirmasi Pemesanan Sibling Tours*\n\n*ID Pemesanan:* #${newBooking.id}\n*Nama:* ${name}\n*Email:* ${email}\n*WhatsApp:* ${phone}\n*Kebangsaan:* ${country}\n*Paket:* ${tour}\n*Tipe Kabin:* ${cabin}\n*Tanggal Mulai:* ${date}\n*Pax:* ${guests} Orang\n*Catatan:* ${notes}\n*Total Estimasi:* Rp ${pricing.grandTotal.toLocaleString('id-ID')}\n\n_Saya telah mengunduh Invoice PDF resmi dari web dan siap melakukan transfer deposit._`;
                     const cleanWa = window.getCleanWhatsAppNumber(AppState.site.whatsapp);
-                    const waUrl = `https://wa.me/${cleanWa}?text=${message}`;
+                    const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(message)}`;
                     window.open(waUrl, '_blank');
                     
                     if (submitBtn) {
@@ -2107,11 +2053,9 @@
             }
         };
 
-        // Otentikasi Administrator (Enterprise-Secured SHA-256 / Rate Limited)
         window.handleAdminLogin = async (event) => {
             event.preventDefault();
 
-            // Cek status Locked Out
             if (lockoutTime && Date.now() < lockoutTime) {
                 const secondsLeft = Math.ceil((lockoutTime - Date.now()) / 1000);
                 showToast(`Formulir terkunci! Silakan coba lagi dalam ${secondsLeft} detik.`, 'error');
@@ -2159,7 +2103,6 @@
                         if (useSupabase && supabaseClient) {
                             await supabaseClient.from('site_settings').update({ admin_password: enteredHash }).eq('id', 1);
                         }
-                        showToast('Keamanan kredensial lama bermigrasi otomatis ke standar enkripsi SHA-256.', 'info');
                     }
                 }
             }
@@ -2187,7 +2130,7 @@
             } else {
                 loginAttempts++;
                 if (loginAttempts >= 5) {
-                    lockoutTime = Date.now() + 60000; // Lock out 60 Detik
+                    lockoutTime = Date.now() + 60000;
                     showToast('Autentikasi diblokir sementara karena terlalu banyak percobaan masuk (60 Detik)!', 'error');
                 } else {
                     showToast(`Kredensial salah! Sisa percobaan masuk: ${5 - loginAttempts}`, 'error');
@@ -2215,7 +2158,6 @@
             container.innerHTML = AdminView.Dashboard(tab);
         };
 
-        // Galeri CRUD Handlers
         window.openGalleryModal = () => {
             document.getElementById('gallery-form').reset();
             document.getElementById('gallery-modal').classList.remove('hidden');
@@ -2273,7 +2215,6 @@
             }
         };
 
-        // FAQ CRUD
         window.addFaqRow = () => {
             const rows = document.getElementById('faq-rows');
             const newDiv = document.createElement('div');
@@ -2323,7 +2264,6 @@
             }
         };
 
-        // Site Settings Editor
         window.saveSiteSettings = async (event) => {
             event.preventDefault();
             
@@ -2407,7 +2347,6 @@
             }
         };
 
-        // Perbarui Keamanan Administrator (Secure SHA-256 Enforced)
         window.saveAdminSecurity = async (event) => {
             event.preventDefault();
 
@@ -2487,7 +2426,6 @@
             }
         };
 
-        // Booking status update
         window.updateBookingStatus = async (id, newStatus) => {
             showToast('Memperbarui status...', 'info');
             try {
@@ -2533,7 +2471,6 @@
             }
         };
 
-        // Tour Packages CRUD Actions
         window.openTourModal = (id = '') => {
             const modal = document.getElementById('tour-modal');
             const titleEl = document.getElementById('modal-title');
@@ -2665,7 +2602,6 @@
             }
         };
 
-        // Copy JSON Database helper
         window.copyToClipboard = () => {
             const box = document.getElementById('db-copy-box');
             box.select();
@@ -2673,7 +2609,6 @@
             showToast('Seluruh data JSON disalin ke papan klip!', 'success');
         };
 
-        // Custom Toast Notification Maker (Sistem Auto-Destroy Mulus)
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const bgClass = type === 'success' ? 'bg-emerald-500' : (type === 'info' ? 'bg-blue-500' : 'bg-red-500');
@@ -2756,21 +2691,17 @@
 
                 this.root.innerHTML = html;
                 
-                // Initialize Pricing on Booking form instantly if selected
                 if(route === 'booking') {
                     setTimeout(() => {
                         window.updateLivePricing();
                     }, 50);
                 }
 
-                // Sinkronisasi Header Navbar
                 this.header.innerHTML = Components.Header();
                 this.setupMobileMenu();
                 
-                // Pemicu dynamic translations
                 await translatePageDynamicContent();
                 
-                // Inject Dynamic JSON-LD SEO Schema
                 if (window.updateJSONLDSchema) {
                     window.updateJSONLDSchema(route, param);
                 }
@@ -2820,7 +2751,6 @@
             }
         };
 
-        // Boot the App
         document.addEventListener('DOMContentLoaded', () => {
             App.init();
         });
