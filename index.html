@@ -2026,12 +2026,12 @@
 
                 generatePDFInvoice(newBooking);
 
+                // Pesan teks WA diperkuat agar admin menerima semua info meskipun PDF belum dilampirkan
+                const message = `*Konfirmasi Pemesanan Sibling Tours*\n\n*ID Pemesanan:* #${newBooking.id}\n*Nama:* ${name}\n*Email:* ${email}\n*WhatsApp:* ${phone}\n*Kebangsaan:* ${country}\n*Paket:* ${tour}\n*Tipe Kabin:* ${cabin}\n*Tanggal Mulai:* ${date}\n*Pax:* ${guests} Orang\n*Catatan:* ${notes}\n*Total Estimasi:* Rp ${pricing.grandTotal.toLocaleString('id-ID')}\n\n_Halo Admin, saya telah mengunduh Invoice PDF. Saya akan melampirkan file PDF tersebut di chat ini secara manual beserta bukti transfer._`;
+                const cleanWa = window.getCleanWhatsAppNumber(AppState.site.whatsapp);
+                const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(message)}`;
+
                 setTimeout(() => {
-                    const message = `*Konfirmasi Pemesanan Sibling Tours*\n\n*ID Pemesanan:* #${newBooking.id}\n*Nama:* ${name}\n*Email:* ${email}\n*WhatsApp:* ${phone}\n*Kebangsaan:* ${country}\n*Paket:* ${tour}\n*Tipe Kabin:* ${cabin}\n*Tanggal Mulai:* ${date}\n*Pax:* ${guests} Orang\n*Catatan:* ${notes}\n*Total Estimasi:* Rp ${pricing.grandTotal.toLocaleString('id-ID')}\n\n_Saya telah mengunduh Invoice PDF resmi dari web dan siap melakukan transfer deposit._`;
-                    const cleanWa = window.getCleanWhatsAppNumber(AppState.site.whatsapp);
-                    const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(message)}`;
-                    window.open(waUrl, '_blank');
-                    
                     if (submitBtn) {
                         submitBtn.disabled = false;
                         submitBtn.innerHTML = `<i class="ph ph-file-pdf text-2xl"></i> ${t('formSubmit')}`;
@@ -2039,7 +2039,13 @@
                     }
                     
                     window.location.hash = '#home';
-                }, 2000);
+
+                    // Coba buka di tab baru. Jika diblokir browser (Popup Blocker), gunakan pengalihan langsung.
+                    const waWindow = window.open(waUrl, '_blank');
+                    if (!waWindow || waWindow.closed || typeof waWindow.closed === 'undefined') {
+                        window.location.href = waUrl;
+                    }
+                }, 1500);
 
             } catch (err) {
                 console.error(err);
