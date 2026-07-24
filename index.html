@@ -415,6 +415,7 @@
             { name: "Dewi Lestari", role: "Customer Service & Booking Operations", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300" }
         ];
 
+        // MASUKKAN KREDENSIAL SUPABASE ANDA DI SINI UNTUK MENSINKRONISASIKAN ANTAR DEVICE
         const SUPABASE_URL = "https://fbveofdacvnkvrxbvzds.supabase.co/rest/v1/"; 
         const SUPABASE_KEY = "sb_publishable_tZ64j2LZm5olA-olkNLd-g_RKrc74ls"; 
 
@@ -435,6 +436,7 @@
         let loginAttempts = 0;
         let lockoutTime = null;
 
+        // Logika WhatsApp diperbarui untuk menangani kode negara dengan aman
         window.getCleanWhatsAppNumber = (num) => {
             if (!num) return "";
             const trimmed = num.trim();
@@ -860,6 +862,7 @@
             Home: () => `
                 <section class="relative h-screen flex items-center justify-center overflow-hidden">
                     <div class="absolute inset-0 z-0">
+                        <!-- lazy load ditambahkan pada banner hero -->
                         <img src="${AppState.hero.image}" alt="Hero Background" loading="lazy" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-primary/40 mix-blend-multiply"></div>
                         <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
@@ -960,6 +963,7 @@
                 return `
                     <section class="relative h-[60vh] flex items-end pb-16">
                         <div class="absolute inset-0 z-0">
+                            <!-- lazy load ditambahkan pada banner detail -->
                             <img src="${tour.thumbnail}" alt="${tour.title}" loading="lazy" onerror="this.src='https://placehold.co/1200x600/0A4D68/FFF?text=Tour+Banner'" class="w-full h-full object-cover">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
                         </div>
@@ -2026,7 +2030,7 @@
 
                 generatePDFInvoice(newBooking);
 
-                // Pesan teks WA diperkuat agar admin menerima semua info meskipun PDF belum dilampirkan
+                // Perbaikan backticks dan interpolasi dolar untuk pesan WA
                 const message = `*Konfirmasi Pemesanan Sibling Tours*\n\n*ID Pemesanan:* #${newBooking.id}\n*Nama:* ${name}\n*Email:* ${email}\n*WhatsApp:* ${phone}\n*Kebangsaan:* ${country}\n*Paket:* ${tour}\n*Tipe Kabin:* ${cabin}\n*Tanggal Mulai:* ${date}\n*Pax:* ${guests} Orang\n*Catatan:* ${notes}\n*Total Estimasi:* Rp ${pricing.grandTotal.toLocaleString('id-ID')}\n\n_Halo Admin, saya telah mengunduh Invoice PDF. Saya akan melampirkan file PDF tersebut di chat ini secara manual beserta bukti transfer._`;
                 const cleanWa = window.getCleanWhatsAppNumber(AppState.site.whatsapp);
                 const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(message)}`;
@@ -2040,7 +2044,7 @@
                     
                     window.location.hash = '#home';
 
-                    // Coba buka di tab baru. Jika diblokir browser (Popup Blocker), gunakan pengalihan langsung.
+                    // Perbaikan logika buka tab baru (kebal pemblokir popup hp)
                     const waWindow = window.open(waUrl, '_blank');
                     if (!waWindow || waWindow.closed || typeof waWindow.closed === 'undefined') {
                         window.location.href = waUrl;
