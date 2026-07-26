@@ -634,28 +634,30 @@
                                 aboutSnippet: siteData.about_snippet || DEFAULT_SITE.aboutSnippet
                             };
                             
-                            if (siteData.admin_username) this.adminUsername = siteData.admin_username;
-                            if (siteData.admin_password) this.adminPassword = siteData.admin_password;
+                            this.adminUsername = siteData.admin_username || 'admin';
+                            this.adminPassword = siteData.admin_password || DEFAULT_PASS_HASH;
                         } else {
                             this.site = DEFAULT_SITE;
+                            this.adminUsername = 'admin';
+                            this.adminPassword = DEFAULT_PASS_HASH;
                         }
 
                         const { data: toursData, error: toursErr } = await supabaseClient.from('tours').select('*').order('created_at', { ascending: true });
-                        if (toursData && !toursErr) {
+                        if (toursData && !toursErr && toursData.length > 0) {
                             this.tours = toursData;
                         } else {
                             this.tours = DEFAULT_TOURS;
                         }
 
                         const { data: galleryData, error: galErr } = await supabaseClient.from('gallery').select('*').order('id', { ascending: false });
-                        if (galleryData && !galErr) {
+                        if (galleryData && !galErr && galleryData.length > 0) {
                             this.gallery = galleryData;
                         } else {
                             this.gallery = JSON.parse(localStorage.getItem('ST_GALLERY')) || DEFAULT_GALLERY;
                         }
 
                         const { data: faqData, error: faqErr } = await supabaseClient.from('faqs').select('*').order('id', { ascending: true });
-                        if (faqData && !faqErr) {
+                        if (faqData && !faqErr && faqData.length > 0) {
                             this.faq = faqData;
                         } else {
                             this.faq = DEFAULT_FAQ;
@@ -2080,7 +2082,8 @@
             const pass = document.getElementById('a-pass').value;
 
             const enteredHash = await sha256(pass);
-            const savedPass = AppState.adminPassword;
+            const savedPass = AppState.adminPassword || DEFAULT_PASS_HASH;
+            const savedUser = AppState.adminUsername || 'admin';
             let loginSuccessful = false;
 
             if (useSupabase && supabaseClient) {
@@ -2103,9 +2106,9 @@
 
             if (!loginSuccessful) {
                 if (isSha256(savedPass)) {
-                    loginSuccessful = (user === AppState.adminUsername && enteredHash === savedPass);
+                    loginSuccessful = (user === savedUser && enteredHash === savedPass);
                 } else {
-                    loginSuccessful = (user === AppState.adminUsername && pass === savedPass);
+                    loginSuccessful = (user === savedUser && pass === savedPass);
                     if (loginSuccessful) {
                         AppState.adminPassword = enteredHash;
                         await AppState.save();
