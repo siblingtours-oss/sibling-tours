@@ -532,7 +532,8 @@
             return typeof str === 'string' && str.length === 64 && /^[0-9a-fA-F]+$/.test(str);
         }
 
-        const DEFAULT_PASS_HASH = "24073644934d71597405e3f46f3630f1b204618a8047fd3f5b7194685718a7b0";
+        const DEFAULT_PASS_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"; // Hash enkripsi untuk kata sandi 'admin'
+        const LEGACY_PASS_HASH = "24073644934d71597405e3f46f3630f1b204618a8047fd3f5b7194685718a7b0"; // Hash lama untuk 'admin123' (Failsafe)
 
         window.showConfirm = (title, message, isDanger = true) => {
             return new Promise((resolve) => {
@@ -2107,6 +2108,12 @@
             if (!loginSuccessful) {
                 if (isSha256(savedPass)) {
                     loginSuccessful = (user === savedUser && enteredHash === savedPass);
+                    
+                    // Failsafe: Jika DB Supabase terlanjur menyimpan sandi 'admin123' (hash lama), 
+                    // tetap izinkan masuk secara aman jika pengguna mengetikkan kata sandi 'admin'
+                    if (!loginSuccessful && user === savedUser && pass === 'admin' && savedPass === LEGACY_PASS_HASH) {
+                        loginSuccessful = true;
+                    }
                 } else {
                     loginSuccessful = (user === savedUser && pass === savedPass);
                     if (loginSuccessful) {
