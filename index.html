@@ -1326,6 +1326,22 @@
             Dashboard: (activeTab = 'tours') => {
                 if (!AppState.isAdminAuthenticated) return AdminView.Login();
 
+                const pendingCount = AppState.bookings.filter(b => b.status === 'Pending').length;
+                const reminderHtml = pendingCount > 0 ? `
+                    <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-5 py-4 rounded-2xl mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-fade-in-up">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center shrink-0">
+                                <i class="ph-fill ph-bell-ringing text-yellow-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm">Pengingat Menunggu Tindakan</h4>
+                                <p class="text-xs">Ada <span class="font-extrabold text-yellow-600">${pendingCount} booking dengan status Pending</span> yang menunggu verifikasi pembayaran.</p>
+                            </div>
+                        </div>
+                        <button onclick="renderAdminTab('bookings')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap">Tinjau Booking</button>
+                    </div>
+                ` : '';
+
                 return `
                     <section class="pt-28 pb-24 bg-light min-h-screen">
                         <div class="container mx-auto px-4 md:px-6">
@@ -1342,6 +1358,8 @@
                                     </button>
                                 </div>
                             </div>
+
+                            ${reminderHtml}
 
                             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
                                 <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-2 h-fit text-sm font-bold">
@@ -1717,12 +1735,20 @@
                     <div class="border-b pb-4 mb-6">
                         <h3 class="text-xl font-bold text-primary">Ekspor Database Konten (JSON)</h3>
                     </div>
-                    <div class="space-y-4">
+                    <div class="space-y-4 mb-10">
                         <textarea id="db-copy-box" readonly rows="12" class="w-full p-4 font-mono text-xs bg-gray-900 text-green-400 rounded-2xl border-none focus:ring-0 select-all">${dbJson}</textarea>
                         <button onclick="copyToClipboard()" class="bg-primary text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-secondary transition flex items-center gap-2">
                             <i class="ph ph-copy"></i> Salin Data JSON
                         </button>
                     </div>
+
+                    <div class="border-b pb-4 mb-6">
+                        <h3 class="text-xl font-bold text-primary">Rekapan Laporan Pemesanan</h3>
+                        <p class="text-xs text-gray-500 mt-1">Unduh seluruh rekapan data tamu untuk keperluan pembukuan ke file format CSV (dapat dibuka dengan Microsoft Excel).</p>
+                    </div>
+                    <button onclick="downloadBookingCSV()" class="bg-green-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-green-700 transition flex items-center gap-2">
+                        <i class="ph ph-file-csv text-lg"></i> Unduh Rekapan Booking (CSV Excel)
+                    </button>
                 `;
             }
         };
@@ -2631,6 +2657,45 @@
             box.select();
             document.execCommand('copy');
             showToast('Seluruh data JSON disalin ke papan klip!', 'success');
+        };
+
+        window.downloadBookingCSV = () => {
+            if (AppState.bookings.length === 0) {
+                showToast('Belum ada data booking untuk direkap.', 'error');
+                return;
+            }
+
+            const headers = ['ID Booking', 'Nama Tamu', 'Email', 'No. WhatsApp', 'Asal Negara', 'Paket Tour', 'Tipe Kabin', 'Tgl Mulai', 'Jumlah Pax', 'Status', 'Catatan Khusus', 'Total Pembayaran (Rp)'];
+            
+            const rows = AppState.bookings.map(b => [
+                b.id,
+                `"${b.name}"`, // Quote strings to prevent comma parsing issues
+                b.email,
+                `"${b.phone}"`,
+                `"${b.country}"`,
+                `"${b.tour}"`,
+                `"${b.cabin || 'Shared'}"`,
+                b.date,
+                b.guests,
+                b.status,
+                `"${(b.notes || '').replace(/"/g, '""')}"`,
+                b.grandTotal || 0
+            ]);
+
+            // Add BOM for Excel to correctly read UTF-8 characters
+            const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
+                + headers.join(",") + "\n" 
+                + rows.map(e => e.join(",")).join("\n");
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Rekapan_Tamu_SiblingTours_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast('File CSV Rekapan berhasil diunduh!', 'success');
         };
 
         function showToast(message, type = 'success') {
