@@ -1889,45 +1889,36 @@
                 doc.text(booking.date, 115, 122);
                 doc.text(`${booking.guests} Pax`, 145, 122);
 
-                const totalFormatted = 'Rp ' + (booking.grandTotal || 0).toLocaleString('id-ID');
+                // Perbaikan 1: Menangani Total Cost (Mencegah nilai Rp 0 pada data lama)
+                const finalTotal = booking.grandTotal ? ('Rp ' + booking.grandTotal.toLocaleString('id-ID')) : 'Sesuai Kesepakatan';
                 doc.setFont('Helvetica', 'bold');
-                doc.text(totalFormatted, 170, 122);
+                doc.text(finalTotal, 170, 122);
                 doc.line(15, 138, 195, 138);
 
                 doc.setFont('Helvetica', 'normal');
                 doc.setFontSize(8.5);
                 doc.setTextColor(...lightText);
-                doc.text(`Base Price per Pax: Rp ${(booking.basePrice || 0).toLocaleString('id-ID')}`, 15, 144);
-                doc.text(`Cabin Surcharge per Pax: Rp ${(booking.surcharge || 0).toLocaleString('id-ID')}`, 15, 149);
+                const basePr = booking.basePrice ? ('Rp ' + booking.basePrice.toLocaleString('id-ID')) : '-';
+                const surchPr = booking.surcharge ? ('Rp ' + booking.surcharge.toLocaleString('id-ID')) : '-';
+                doc.text(`Base Price per Pax: ${basePr}`, 15, 144);
+                doc.text(`Cabin Surcharge per Pax: ${surchPr}`, 15, 149);
 
+                // Perbaikan 2: Menghapus Instruksi Bank & Menggantinya dengan Stempel Status
+                const isConfirmed = booking.status === 'Confirmed';
                 doc.setFont('Helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.setTextColor(...primaryColor);
-                doc.text('PAYMENT INSTRUCTIONS', 15, 160);
-                doc.line(15, 162, 195, 162);
-
-                doc.setFont('Helvetica', 'normal');
-                doc.setFontSize(9.5);
-                doc.setTextColor(...darkText);
-                doc.text('Silakan konfirmasi pesanan dengan mengirimkan DP (Down Payment) 50% atau pelunasan ke:', 15, 169);
+                doc.setFontSize(14);
+                if (isConfirmed) {
+                    doc.setTextColor(34, 197, 94); // Warna hijau
+                    doc.text('STATUS: PAID / CONFIRMED', 15, 165);
+                } else {
+                    doc.setTextColor(234, 179, 8); // Warna kuning
+                    doc.text('STATUS: PENDING PAYMENT / DP', 15, 165);
+                }
                 
-                doc.setFillColor(248, 250, 252);
-                doc.rect(15, 173, 180, 20, 'F');
-                
-                doc.setFont('Helvetica', 'bold');
-                doc.text('Bank Central Asia (BCA)', 20, 179);
                 doc.setFont('Helvetica', 'normal');
-                doc.text('No Rekening: 091-234-5678', 20, 184);
-                doc.text('Atas Nama: Sibling Tours Labuan Bajo', 20, 189);
-
-                doc.setFont('Helvetica', 'bold');
-                doc.setTextColor(239, 68, 68);
-                doc.text('CATATAN PENTING:', 15, 202);
-                doc.setFont('Helvetica', 'normal');
+                doc.setFontSize(9);
                 doc.setTextColor(...lightText);
-                doc.setFontSize(8.5);
-                doc.text('Setelah mengunduh file PDF ini, harap segera mengirimkannya beserta bukti pembayaran transfer Anda ke WhatsApp CS kami.', 15, 207);
-                doc.text('Tim kami akan memproses validasi tiket digital Anda dan merilis Kode Konfirmasi Trip resmi.', 15, 211);
+                doc.text('Invoice ini dicetak secara otomatis oleh sistem CMS Sibling Tours.', 15, 172);
 
                 doc.setDrawColor(...secondaryColor);
                 doc.setLineWidth(1);
