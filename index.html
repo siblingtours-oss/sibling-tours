@@ -1548,7 +1548,7 @@
                                         <td class="px-4 py-3 font-mono text-gray-400 font-semibold">#${book.id}</td>
                                         <td class="px-4 py-3 font-bold text-dark">${book.name} <span class="block text-[10px] font-normal text-gray-400">${book.country}</span></td>
                                         <td class="px-4 py-3">
-                                            <a href="https://wa.me/${book.phone}" target="_blank" class="text-green-600 hover:underline"><i class="ph ph-whatsapp-logo"></i> ${book.phone}</a>
+                                            <a href="https://wa.me/${window.getCleanWhatsAppNumber(book.phone)}" target="_blank" class="text-green-600 hover:underline"><i class="ph ph-whatsapp-logo"></i> ${book.phone}</a>
                                             <span class="block text-[10px] text-gray-400">${book.email}</span>
                                         </td>
                                         <td class="px-4 py-3 font-medium text-dark">
